@@ -22,6 +22,7 @@
     .nav-actions { display: flex; align-items: center; gap: 1.2rem; }
     .btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; font-size: 0.9rem; }
     .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:disabled { background: #475569; cursor: not-allowed; }
     .btn-secondary { background: #334155; color: white; }
 
     .user-menu-container { position: relative; }
@@ -62,6 +63,9 @@
     .form-control { width: 100%; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: white; box-sizing: border-box; margin-bottom: 10px; }
     .code-input { font-family: monospace; background: #0f172a; color: #38bdf8; }
     .preview-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-top: 10px; border: 2px solid var(--primary); display: none; }
+    
+    /* スパム対策用ハニポット（隠し要素） */
+    .hp-field { display: none !important; visibility: hidden; }
   </style>
 </head>
 <body>
@@ -87,144 +91,44 @@
     <div class="script-grid" id="scriptGrid"></div>
   </main>
 
-  <div class="modal-overlay" id="postModal"><div class="modal-content"><h2 id="modalTitle">スクリプトを投稿</h2><form id="postForm"><input type="hidden" id="editDocId"><input type="text" id="postTitle" class="form-control" placeholder="タイトル" required><input type="text" id="postGame" class="form-control" placeholder="ゲーム名" required><textarea id="postDesc" class="form-control" placeholder="説明文"></textarea><textarea id="postContent" class="form-control code-input" rows="5" placeholder="Lua コード" required></textarea><div style="display:flex; justify-content: flex-end; gap:10px;"><button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">キャンセル</button><button type="submit" class="btn btn-primary" id="submitBtn">公開する</button></div></form></div></div>
-  <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>プロフィール編集</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="名前" required><textarea id="editBio" class="form-control" placeholder="自己紹介" rows="3"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">キャンセル</button><button type="submit" class="btn btn-primary">変更を保存</button></div></form></div></div>
+  <div class="modal-overlay" id="postModal">
+    <div class="modal-content">
+      <h2 id="modalTitle">スクリプトを投稿</h2>
+      <form id="postForm">
+        <input type="hidden" id="editDocId">
+        <input type="text" id="hp_user" class="hp-field" tabindex="-1" autocomplete="off">
+        
+        <input type="text" id="postTitle" class="form-control" placeholder="タイトル (3文字以上)" required minlength="3" maxlength="50">
+        <input type="text" id="postGame" class="form-control" placeholder="ゲーム名" required maxlength="30">
+        <textarea id="postDesc" class="form-control" placeholder="説明文 (最大200文字)" maxlength="200"></textarea>
+        <textarea id="postContent" class="form-control code-input" rows="8" placeholder="Lua コード (10文字以上)" required minlength="10"></textarea>
+        
+        <div style="display:flex; justify-content: flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">キャンセル</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">公開する</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>プロフィール編集</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="名前" required maxlength="20"><textarea id="editBio" class="form-control" placeholder="自己紹介" rows="3" maxlength="150"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">キャンセル</button><button type="submit" class="btn btn-primary">変更を保存</button></div></form></div></div>
+  
   <div class="modal-overlay" id="userProfileModal"><div class="modal-content" style="text-align:center"><img id="viewAvatar" style="width:120px; height:120px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;"><h2 id="viewName"></h2><p id="viewBio" style="color:var(--text-muted); line-height:1.6;"></p><button class="btn btn-secondary" onclick="closeModal('userProfileModal')">閉じる</button></div></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth,onAuthStateChanged,signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore,collection,addDoc,onSnapshot,query,orderBy,doc,updateDoc,deleteDoc,arrayUnion,arrayRemove,increment,getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, increment, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const firebaseConfig={
-apiKey:"AIzaSyAqy2H40wFYd86zbFmPurvI8SsV1-x8luU",
-authDomain:"flutter-ai-playground-96c40.firebaseapp.com",
-projectId:"flutter-ai-playground-96c40",
-storageBucket:"flutter-ai-playground-96c40.firebasestorage.app",
-messagingSenderId:"1063688315774",
-appId:"1:1063688315774:web:1e5d77f259203c56b4c92f"
-};
-
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
-
-////////////////////////////////////////////////////////
-/* スパム対策 */
-////////////////////////////////////////////////////////
-
-const POST_COOLDOWN=15000;
-const COMMENT_COOLDOWN=5000;
-
-let lastPostTime=0;
-let lastCommentTime=0;
-
-let lastPostContent="";
-let lastCommentContent="";
-
-const bannedWords=[
-"せっくす",
-"sex",
-"セックス",
-"まんこ",
-"マンコ",
-"ちんこ",
-"チンコ"
-];
-
-function containsSpam(text){
-const t=text.toLowerCase();
-return bannedWords.some(w=>t.includes(w));
-}
-
-function tooFast(last,cool){
-return Date.now()-last<cool;
-}
-
-////////////////////////////////////////////////////////
-
-window.handleAddComment=async(id)=>{
-
-if(!auth.currentUser)return;
-
-if(tooFast(lastCommentTime,COMMENT_COOLDOWN)){
-alert("コメントが早すぎます");
-return;
-}
-
-const input=document.getElementById(`input-${id}`);
-const txt=input.value.trim();
-
-if(!txt)return;
-
-if(txt.length>200){
-alert("コメントが長すぎます");
-return;
-}
-
-if(containsSpam(txt)){
-alert("スパム検出");
-return;
-}
-
-if(txt===lastCommentContent){
-alert("同じコメントを連投できません");
-return;
-}
-
-lastCommentTime=Date.now();
-lastCommentContent=txt;
-
-await updateDoc(doc(db,"scripts",id),{
-comments:arrayUnion({
-t:txt,
-uid:auth.currentUser.uid
-})
-});
-
-input.value="";
-
-};
-
-////////////////////////////////////////////////////////
-
-document.getElementById('postForm').onsubmit=async(e)=>{
-
-e.preventDefault();
-
-if(!auth.currentUser)return;
-
-if(document.getElementById("botTrap").value!==""){
-alert("Bot検出");
-return;
-}
-
-if(tooFast(lastPostTime,POST_COOLDOWN)){
-alert("投稿が早すぎます");
-return;
-}
-
-const title=document.getElementById('postTitle').value.trim();
-const desc=document.getElementById('postDesc').value.trim();
-const content=document.getElementById('postContent').value.trim();
-
-if(title.length>100||desc.length>500||content.length>5000){
-alert("文字数制限を超えています");
-return;
-}
-
-if(containsSpam(title)||containsSpam(desc)||containsSpam(content)){
-alert("スパム検出");
-return;
-}
-
-if(content===lastPostContent){
-alert("同じ投稿を連続できません");
-return;
-}
-
-lastPostTime=Date.now();
-lastPostContent=content;
+    // --- ここにあなたのFirebase情報を入れてください ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAqy2H40wFYd86zbFmPurvI8SsV1-x8luU",
+      authDomain: "flutter-ai-playground-96c40.firebaseapp.com",
+      projectId: "flutter-ai-playground-96c40",
+      storageBucket: "flutter-ai-playground-96c40.firebasestorage.app",
+      messagingSenderId: "1063688315774",
+      appId: "1:1063688315774:web:1e5d77f259203c56b4c92f"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -233,6 +137,10 @@ lastPostContent=content;
 
     let currentUserData = null;
     let scripts = [];
+    
+    // スパム対策用：最後の投稿時間
+    let lastPostTimestamp = 0;
+    const POST_INTERVAL = 30000; // 30秒
 
     const requireAuth = () => { if (!auth.currentUser) { window.location.href = LOGIN_PAGE; return false; } return true; };
 
@@ -262,7 +170,7 @@ lastPostContent=content;
       const term = document.getElementById('searchInput').value.toLowerCase();
       grid.innerHTML = '';
 
-      scripts.filter(s => s.title.toLowerCase().includes(term)).forEach(s => {
+      scripts.filter(s => s.title.toLowerCase().includes(term) || s.game.toLowerCase().includes(term)).forEach(s => {
         const isMine = auth.currentUser && s.authorUid === auth.currentUser.uid;
         const isLiked = auth.currentUser && s.likedBy?.includes(auth.currentUser.uid);
         const card = document.createElement('div');
@@ -281,7 +189,7 @@ lastPostContent=content;
                 <img src="${c.a || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'}" class="comment-avatar" onclick="showUser('${c.uid}')">
                 <div class="comment-content"><strong>${c.u}:</strong> ${c.t}</div>
               </div>`).join('')}</div>
-            <div style="display:flex; gap:5px;"><input type="text" id="input-${s.id}" class="form-control" style="margin:0; padding:5px; font-size:0.8rem;" placeholder="コメントを追加..."><button class="btn btn-primary" style="padding:4px 8px;" onclick="handleAddComment('${s.id}')">投稿</button></div>
+            <div style="display:flex; gap:5px;"><input type="text" id="input-${s.id}" class="form-control" style="margin:0; padding:5px; font-size:0.8rem;" placeholder="コメントを追加..." maxlength="100"><button class="btn btn-primary" style="padding:4px 8px;" onclick="handleAddComment('${s.id}')">投稿</button></div>
           </div>
           <div class="card-footer">
             <div class="author-info" onclick="showUser('${s.authorUid}')"><img src="${s.authorAvatar}" class="author-avatar"><span>${s.authorName}</span></div>
@@ -300,41 +208,128 @@ lastPostContent=content;
       });
     };
 
+    // --- スパム対策込みの投稿・コメント処理 ---
+
     window.handleAddComment = async (id) => {
       const input = document.getElementById(`input-${id}`);
-      if (!requireAuth() || !input.value.trim()) return;
-      await updateDoc(doc(db, "scripts", id), { comments: arrayUnion({ u: currentUserData.name, a: currentUserData.avatar, t: input.value, uid: auth.currentUser.uid }) });
-      input.value = '';
+      const commentText = input.value.trim();
+      if (!requireAuth()) return;
+      if (commentText.length < 2) return alert("コメントが短すぎます");
+
+      // コメント連投対策 (5秒)
+      const now = Date.now();
+      if (now - lastPostTimestamp < 5000) return alert("少し待ってからコメントしてください");
+
+      try {
+        await updateDoc(doc(db, "scripts", id), { 
+          comments: arrayUnion({ 
+            u: currentUserData.name, 
+            a: currentUserData.avatar, 
+            t: commentText, 
+            uid: auth.currentUser.uid,
+            createdAt: now 
+          }) 
+        });
+        input.value = '';
+        lastPostTimestamp = now;
+      } catch (e) { alert("投稿に失敗しました"); }
     };
 
+    document.getElementById('postForm').onsubmit = async (e) => {
+      e.preventDefault();
+      if (!requireAuth()) return;
+
+      // ハニポットチェック（ボットは隠しフィールドに値を入れがち）
+      if (document.getElementById('hp_user').value !== "") return;
+
+      // 新規投稿時の連投制限
+      const now = Date.now();
+      const id = document.getElementById('editDocId').value;
+      if (!id && (now - lastPostTimestamp < POST_INTERVAL)) {
+        const wait = Math.ceil((POST_INTERVAL - (now - lastPostTimestamp)) / 1000);
+        return alert(`連投防止のため、あと ${wait} 秒待機してください`);
+      }
+
+      const title = document.getElementById('postTitle').value.trim();
+      const content = document.getElementById('postContent').value.trim();
+
+      const data = { 
+        title: title, 
+        game: document.getElementById('postGame').value.trim(), 
+        desc: document.getElementById('postDesc').value.trim(), 
+        content: content, 
+        updatedAt: now 
+      };
+
+      try {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "送信中...";
+
+        if (id) {
+          await updateDoc(doc(db, "scripts", id), data);
+        } else {
+          await addDoc(collection(db, "scripts"), { 
+            ...data, 
+            authorName: currentUserData.name, 
+            authorAvatar: currentUserData.avatar, 
+            authorUid: auth.currentUser.uid, 
+            likes: 0, 
+            likedBy: [], 
+            comments: [], 
+            createdAt: now 
+          });
+          lastPostTimestamp = now;
+        }
+        
+        closeModal('postModal');
+        e.target.reset();
+        document.getElementById('editDocId').value = "";
+      } catch (err) {
+        alert("エラーが発生しました");
+      } finally {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = false;
+        btn.innerText = "公開する";
+      }
+    };
+
+    // --- その他UI機能 ---
+
     window.handleLike = async (id, isLiked) => { if(!requireAuth()) return; await updateDoc(doc(db, "scripts", id), { likes: increment(isLiked ? -1 : 1), likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) }); };
-    window.handleDelete = async (id) => { if(requireAuth() && confirm("削除しますか？")) await deleteDoc(doc(db, "scripts", id)); };
-    document.getElementById('postForm').onsubmit = async (e) => { e.preventDefault(); if (!requireAuth()) return; const id = document.getElementById('editDocId').value; const data = { title: document.getElementById('postTitle').value, game: document.getElementById('postGame').value, desc: document.getElementById('postDesc').value, content: document.getElementById('postContent').value, updatedAt: Date.now() }; if (id) { await updateDoc(doc(db, "scripts", id), data); } else { await addDoc(collection(db, "scripts"), { ...data, authorName: currentUserData.name, authorAvatar: currentUserData.avatar, authorUid: auth.currentUser.uid, likes: 0, likedBy: [], comments: [], createdAt: Date.now() }); } closeModal('postModal'); e.target.reset(); document.getElementById('editDocId').value = ""; };
+    
+    window.handleDelete = async (id) => { if(requireAuth() && confirm("本当に削除しますか？")) await deleteDoc(doc(db, "scripts", id)); };
+    
     window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; document.getElementById('editPreview').style.display='block'; openModal('profileEditModal'); };
+    
     document.getElementById('profileEditForm').onsubmit = async (e) => { e.preventDefault(); const upd = { name: document.getElementById('editName').value, bio: document.getElementById('editBio').value, avatar: document.getElementById('editPreview').src }; await updateDoc(doc(db, "users", auth.currentUser.uid), upd); closeModal('profileEditModal'); };
+    
     document.getElementById('editFile').onchange = (e) => { const r = new FileReader(); r.onload = (ev) => { document.getElementById('editPreview').src = ev.target.result; document.getElementById('editPreview').style.display = 'block'; }; r.readAsDataURL(e.target.files[0]); };
     
     window.copyCode = (txt, btn) => {
-      if (!navigator.clipboard) {
-        const textArea = document.createElement("textarea");
-        textArea.value = txt;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-      } else {
-        navigator.clipboard.writeText(txt);
-      }
-      btn.textContent = 'コピー完了！';
-      setTimeout(() => btn.textContent = 'コードをコピー', 1500);
+      navigator.clipboard.writeText(txt).then(() => {
+        const oldText = btn.textContent;
+        btn.textContent = 'コピー完了！';
+        setTimeout(() => btn.textContent = oldText, 1500);
+      });
     };
 
     window.toggleComments = (id) => { const el = document.getElementById(`comments-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; };
-    window.openModal = (id) => document.getElementById(id).style.display = 'flex';
-    window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+    window.openModal = (id) => { document.getElementById(id).style.display = 'flex'; };
+    window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
     window.toggleDropdown = () => { const d = document.getElementById('userDropdown'); d.style.display = d.style.display === 'flex' ? 'none' : 'flex'; };
     window.toggleCardMenu = (id) => { const m = document.getElementById(`menu-${id}`); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
-    window.openEditModal = (id) => { const s = scripts.find(x => x.id === id); document.getElementById('editDocId').value = id; document.getElementById('postTitle').value = s.title; document.getElementById('postGame').value = s.game; document.getElementById('postDesc').value = s.desc; document.getElementById('postContent').value = s.content; document.getElementById('modalTitle').innerText = "スクリプトを編集"; openModal('postModal'); };
+    
+    window.openEditModal = (id) => { 
+      const s = scripts.find(x => x.id === id); 
+      document.getElementById('editDocId').value = id; 
+      document.getElementById('postTitle').value = s.title; 
+      document.getElementById('postGame').value = s.game; 
+      document.getElementById('postDesc').value = s.desc; 
+      document.getElementById('postContent').value = s.content; 
+      document.getElementById('modalTitle').innerText = "スクリプトを編集"; 
+      openModal('postModal'); 
+    };
     
     window.showUser = async (uid) => { 
       const u = await getDoc(doc(db, "users", uid)); 
@@ -347,9 +342,16 @@ lastPostContent=content;
       } 
     };
 
-    document.getElementById('postBtnMain').onclick = () => requireAuth() ? openModal('postModal') : null;
+    document.getElementById('postBtnMain').onclick = () => {
+        if(requireAuth()) {
+            document.getElementById('editDocId').value = "";
+            document.getElementById('modalTitle').innerText = "スクリプトを投稿";
+            document.getElementById('postForm').reset();
+            openModal('postModal');
+        }
+    };
     document.getElementById('searchInput').oninput = render;
-    window.onclick = (e) => { if(e.target.className === 'modal-overlay') e.target.style.display = 'none'; if(!e.target.closest('.card-menu-btn')) document.querySelectorAll('.card-menu').forEach(m => m.style.display='none'); if(!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none'; };
+    window.onclick = (e) => { if(e.target.className === 'modal-overlay') { e.target.style.display = 'none'; } if(!e.target.closest('.card-menu-btn')) document.querySelectorAll('.card-menu').forEach(m => m.style.display='none'); if(!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none'; };
   </script>
 </body>
 </html>
