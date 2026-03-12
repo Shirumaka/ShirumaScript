@@ -137,12 +137,7 @@
     let lastPostTimestamp = 0;
     const POST_INTERVAL = 30000;
 
-    // --- 禁止ワード設定 ---
-    const NG_WORDS = ["死ね", "殺す", "馬鹿", "baka", "ゴミ", "カス"]; // 必要に応じて追加
-
-    /**
-     * テキスト内のNGワードをチェックし、伏せ字にする関数
-     */
+    const NG_WORDS = ["死ね", "殺す", "馬鹿", "baka", "ゴミ", "カス"];
     const filterText = (text) => {
       let filtered = text;
       NG_WORDS.forEach(word => {
@@ -224,7 +219,6 @@
       if (!requireAuth()) return;
       if (commentText.length < 2) return alert("コメントが短すぎます");
 
-      // 禁止ワードフィルター適用
       commentText = filterText(commentText);
 
       const now = Date.now();
@@ -256,11 +250,10 @@
         return alert(`あと ${Math.ceil((POST_INTERVAL - (now - lastPostTimestamp)) / 1000)} 秒待機してください`);
       }
 
-      // 入力値の取得とNGワードフィルタリング
       const title = filterText(document.getElementById('postTitle').value.trim());
       const game = filterText(document.getElementById('postGame').value.trim());
       const desc = filterText(document.getElementById('postDesc').value.trim());
-      const content = document.getElementById('postContent').value.trim(); // コード部分は基本除外
+      const content = document.getElementById('postContent').value.trim();
 
       const data = { title, game, desc, content, updatedAt: now };
 
@@ -295,7 +288,6 @@
       }
     };
 
-    // --- その他UI用 ---
     window.handleLike = async (id, isLiked) => { if(!requireAuth()) return; await updateDoc(doc(db, "scripts", id), { likes: increment(isLiked ? -1 : 1), likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) }); };
     window.handleDelete = async (id) => { if(requireAuth() && confirm("本当に削除しますか？")) await deleteDoc(doc(db, "scripts", id)); };
     window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; openModal('profileEditModal'); };
