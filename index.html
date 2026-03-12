@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShirumaScripts - Ultimate Edition</title>
+  <title>ShirumaScripts - Professional Edition</title>
   <style>
     :root {
       --primary: #6366f1; --primary-hover: #4f46e5;
@@ -48,8 +48,10 @@
     .script-desc { color: var(--text-muted); font-size: 0.95rem; margin: 15px 0; }
 
     .comment-section { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; margin-top: 10px; display: none; }
-    .comment-list { max-height: 120px; overflow-y: auto; font-size: 0.8rem; margin-bottom: 10px; }
-    .comment-item { margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .comment-list { max-height: 150px; overflow-y: auto; font-size: 0.8rem; margin-bottom: 10px; }
+    .comment-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .comment-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+    .comment-content { flex: 1; }
 
     .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px; margin-top: auto; }
     .author-info { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; }
@@ -81,55 +83,13 @@
       <h1>Find your next <span>Script</span>.</h1>
       <p>Customizable Cloud Script Portal</p>
     </section>
-
-    <div class="search-container">
-      <input type="search" id="searchInput" class="search-input" placeholder="Search scripts...">
-    </div>
-
+    <div class="search-container"><input type="search" id="searchInput" class="search-input" placeholder="Search scripts..."></div>
     <div class="script-grid" id="scriptGrid"></div>
   </main>
 
-  <div class="modal-overlay" id="postModal">
-    <div class="modal-content">
-      <h2 id="modalTitle">Post Script</h2>
-      <form id="postForm">
-        <input type="hidden" id="editDocId">
-        <input type="text" id="postTitle" class="form-control" placeholder="Title" required>
-        <input type="text" id="postGame" class="form-control" placeholder="Game" required>
-        <textarea id="postDesc" class="form-control" placeholder="Description"></textarea>
-        <textarea id="postContent" class="form-control code-input" rows="5" placeholder="Lua Code" required></textarea>
-        <div style="display:flex; justify-content: flex-end; gap:10px;">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="submitBtn">Publish</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="profileEditModal">
-    <div class="modal-content">
-      <h2>Edit Profile</h2>
-      <form id="profileEditForm">
-        <input type="text" id="editName" class="form-control" placeholder="Name" required>
-        <textarea id="editBio" class="form-control" placeholder="Bio" rows="3"></textarea>
-        <input type="file" id="editFile" class="form-control" accept="image/*">
-        <img id="editPreview" class="preview-img">
-        <div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Changes</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="userProfileModal">
-    <div class="modal-content" style="text-align:center">
-      <img id="viewAvatar" style="width:100px; height:100px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;">
-      <h2 id="viewName"></h2>
-      <p id="viewBio" style="color:var(--text-muted)"></p>
-      <button class="btn btn-secondary" onclick="closeModal('userProfileModal')">Close</button>
-    </div>
-  </div>
+  <div class="modal-overlay" id="postModal"><div class="modal-content"><h2 id="modalTitle">Post Script</h2><form id="postForm"><input type="hidden" id="editDocId"><input type="text" id="postTitle" class="form-control" placeholder="Title" required><input type="text" id="postGame" class="form-control" placeholder="Game" required><textarea id="postDesc" class="form-control" placeholder="Description"></textarea><textarea id="postContent" class="form-control code-input" rows="5" placeholder="Lua Code" required></textarea><div style="display:flex; justify-content: flex-end; gap:10px;"><button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">Cancel</button><button type="submit" class="btn btn-primary" id="submitBtn">Publish</button></div></form></div></div>
+  <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>Edit Profile</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="Name" required><textarea id="editBio" class="form-control" placeholder="Bio" rows="3"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">Cancel</button><button type="submit" class="btn btn-primary">Save Changes</button></div></form></div></div>
+  <div class="modal-overlay" id="userProfileModal"><div class="modal-content" style="text-align:center"><img id="viewAvatar" style="width:100px; height:100px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;"><h2 id="viewName"></h2><p id="viewBio" style="color:var(--text-muted)"></p><button class="btn btn-secondary" onclick="closeModal('userProfileModal')">Close</button></div></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -153,13 +113,7 @@
     let currentUserData = null;
     let scripts = [];
 
-    const requireAuth = () => {
-      if (!auth.currentUser) {
-        window.location.href = LOGIN_PAGE;
-        return false;
-      }
-      return true;
-    };
+    const requireAuth = () => { if (!auth.currentUser) { window.location.href = LOGIN_PAGE; return false; } return true; };
 
     onAuthStateChanged(auth, async (user) => {
       const avatarImg = document.getElementById('headerAvatar');
@@ -168,13 +122,10 @@
         const uDoc = await getDoc(doc(db, "users", user.uid));
         currentUserData = uDoc.exists() ? uDoc.data() : { uid: user.uid, name: user.displayName || "User", bio: "", avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` };
         avatarImg.src = currentUserData.avatar;
-        menu.innerHTML = `<div style="padding:12px; border-bottom:1px solid var(--border)"><strong>${currentUserData.name}</strong></div>
-          <button class="dropdown-item" onclick="openProfileEdit()">⚙️ Edit Profile</button>
-          <button class="dropdown-item" id="logoutBtn" style="color:var(--danger)">🚪 Log Out</button>`;
+        menu.innerHTML = `<div style="padding:12px; border-bottom:1px solid var(--border)"><strong>${currentUserData.name}</strong></div><button class="dropdown-item" onclick="openProfileEdit()">⚙️ Edit Profile</button><button class="dropdown-item" id="logoutBtn" style="color:var(--danger)">🚪 Log Out</button>`;
         document.getElementById('logoutBtn').onclick = () => signOut(auth);
       } else {
-        currentUserData = null;
-        avatarImg.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
+        currentUserData = null; avatarImg.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
         menu.innerHTML = `<button class="dropdown-item" onclick="window.location.href='${LOGIN_PAGE}'">🔑 Login / Sign Up</button>`;
       }
       render();
@@ -196,8 +147,7 @@
         const card = document.createElement('div');
         card.className = 'script-card';
         card.innerHTML = `
-          ${isMine ? `<button class="card-menu-btn" onclick="toggleCardMenu('${s.id}')">⋮</button>
-          <div class="card-menu" id="menu-${s.id}"><button class="dropdown-item" onclick="openEditModal('${s.id}')">✏️ Edit</button><button class="dropdown-item" style="color:var(--danger)" onclick="handleDelete('${s.id}')">🗑️ Delete</button></div>` : ''}
+          ${isMine ? `<button class="card-menu-btn" onclick="toggleCardMenu('${s.id}')">⋮</button><div class="card-menu" id="menu-${s.id}"><button class="dropdown-item" onclick="openEditModal('${s.id}')">✏️ Edit</button><button class="dropdown-item" style="color:var(--danger)" onclick="handleDelete('${s.id}')">🗑️ Delete</button></div>` : ''}
           <div class="card-header"><h3>${s.title}</h3><span class="game-tag">${s.game}</span></div>
           <p class="script-desc">${s.desc}</p>
           <div style="display:flex; gap:15px; margin-bottom:10px;">
@@ -205,7 +155,11 @@
             <button class="btn" style="background:none; color:var(--primary); font-size:0.8rem;" onclick="toggleComments('${s.id}')">💬 ${s.comments?.length || 0} Comments</button>
           </div>
           <div id="comments-${s.id}" class="comment-section">
-            <div class="comment-list">${(s.comments || []).map(c => `<div class="comment-item"><strong>${c.u}:</strong> ${c.t}</div>`).join('')}</div>
+            <div class="comment-list">${(s.comments || []).map(c => `
+              <div class="comment-item">
+                <img src="${c.a || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'}" class="comment-avatar">
+                <div class="comment-content"><strong>${c.u}:</strong> ${c.t}</div>
+              </div>`).join('')}</div>
             <div style="display:flex; gap:5px;"><input type="text" id="input-${s.id}" class="form-control" style="margin:0; padding:5px; font-size:0.8rem;" placeholder="Add comment..."><button class="btn btn-primary" style="padding:4px 8px;" onclick="handleAddComment('${s.id}')">Post</button></div>
           </div>
           <div class="card-footer">
@@ -220,27 +174,16 @@
     window.handleAddComment = async (id) => {
       const input = document.getElementById(`input-${id}`);
       if (!requireAuth() || !input.value.trim()) return;
-      await updateDoc(doc(db, "scripts", id), { comments: arrayUnion({ u: currentUserData.name, t: input.value, uid: auth.currentUser.uid }) });
+      await updateDoc(doc(db, "scripts", id), { comments: arrayUnion({ u: currentUserData.name, a: currentUserData.avatar, t: input.value, uid: auth.currentUser.uid }) });
       input.value = '';
     };
 
     window.handleLike = async (id, isLiked) => { if(!requireAuth()) return; await updateDoc(doc(db, "scripts", id), { likes: increment(isLiked ? -1 : 1), likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) }); };
     window.handleDelete = async (id) => { if(requireAuth() && confirm("Delete?")) await deleteDoc(doc(db, "scripts", id)); };
-
-    document.getElementById('postForm').onsubmit = async (e) => {
-      e.preventDefault();
-      if (!requireAuth()) return;
-      const id = document.getElementById('editDocId').value;
-      const data = { title: document.getElementById('postTitle').value, game: document.getElementById('postGame').value, desc: document.getElementById('postDesc').value, content: document.getElementById('postContent').value, updatedAt: Date.now() };
-      if (id) { await updateDoc(doc(db, "scripts", id), data); }
-      else { await addDoc(collection(db, "scripts"), { ...data, authorName: currentUserData.name, authorAvatar: currentUserData.avatar, authorUid: auth.currentUser.uid, likes: 0, likedBy: [], comments: [], createdAt: Date.now() }); }
-      closeModal('postModal'); e.target.reset(); document.getElementById('editDocId').value = "";
-    };
-
+    document.getElementById('postForm').onsubmit = async (e) => { e.preventDefault(); if (!requireAuth()) return; const id = document.getElementById('editDocId').value; const data = { title: document.getElementById('postTitle').value, game: document.getElementById('postGame').value, desc: document.getElementById('postDesc').value, content: document.getElementById('postContent').value, updatedAt: Date.now() }; if (id) { await updateDoc(doc(db, "scripts", id), data); } else { await addDoc(collection(db, "scripts"), { ...data, authorName: currentUserData.name, authorAvatar: currentUserData.avatar, authorUid: auth.currentUser.uid, likes: 0, likedBy: [], comments: [], createdAt: Date.now() }); } closeModal('postModal'); e.target.reset(); document.getElementById('editDocId').value = ""; };
     window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; document.getElementById('editPreview').style.display='block'; openModal('profileEditModal'); };
     document.getElementById('profileEditForm').onsubmit = async (e) => { e.preventDefault(); const upd = { name: document.getElementById('editName').value, bio: document.getElementById('editBio').value, avatar: document.getElementById('editPreview').src }; await updateDoc(doc(db, "users", auth.currentUser.uid), upd); closeModal('profileEditModal'); };
     document.getElementById('editFile').onchange = (e) => { const r = new FileReader(); r.onload = (ev) => { document.getElementById('editPreview').src = ev.target.result; document.getElementById('editPreview').style.display = 'block'; }; r.readAsDataURL(e.target.files[0]); };
-
     window.copyCode = (txt, btn) => { navigator.clipboard.writeText(txt); btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy Code', 1500); };
     window.toggleComments = (id) => { const el = document.getElementById(`comments-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; };
     window.openModal = (id) => document.getElementById(id).style.display = 'flex';
@@ -249,14 +192,9 @@
     window.toggleCardMenu = (id) => { const m = document.getElementById(`menu-${id}`); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
     window.openEditModal = (id) => { const s = scripts.find(x => x.id === id); document.getElementById('editDocId').value = id; document.getElementById('postTitle').value = s.title; document.getElementById('postGame').value = s.game; document.getElementById('postDesc').value = s.desc; document.getElementById('postContent').value = s.content; document.getElementById('modalTitle').innerText = "Edit Script"; openModal('postModal'); };
     window.showUser = async (uid) => { const u = await getDoc(doc(db, "users", uid)); if(u.exists()){ const d = u.data(); document.getElementById('viewName').innerText = d.name; document.getElementById('viewAvatar').src = d.avatar; document.getElementById('viewBio').innerText = d.bio; openModal('userProfileModal'); } };
-    
     document.getElementById('postBtnMain').onclick = () => requireAuth() ? openModal('postModal') : null;
     document.getElementById('searchInput').oninput = render;
-    window.onclick = (e) => { 
-      if(e.target.className === 'modal-overlay') e.target.style.display = 'none'; 
-      if(!e.target.closest('.card-menu-btn')) document.querySelectorAll('.card-menu').forEach(m => m.style.display='none');
-      if(!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none';
-    };
+    window.onclick = (e) => { if(e.target.className === 'modal-overlay') e.target.style.display = 'none'; if(!e.target.closest('.card-menu-btn')) document.querySelectorAll('.card-menu').forEach(m => m.style.display='none'); if(!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none'; };
   </script>
 </body>
 </html>
