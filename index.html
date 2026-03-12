@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shiruma Scripts - Main</title>
+  <title>ShirumaScripts - メイン</title>
   <style>
     :root {
       --primary: #6366f1; --primary-hover: #4f46e5;
@@ -80,16 +80,16 @@
 
   <main>
     <section class="hero">
-      <h1>スクリプトを人々と共有できる<span>Shiruma Script</span>.</h1>
-      <p>今すぐにログインしてスクリプトを投稿しよう。</p>
+      <h1>理想の<span>スクリプト</span>を見つけよう</h1>
+      <p>カスタマイズ可能なクラウドスクリプトポータル</p>
     </section>
     <div class="search-container"><input type="search" id="searchInput" class="search-input" placeholder="スクリプトを検索..."></div>
     <div class="script-grid" id="scriptGrid"></div>
   </main>
 
-  <div class="modal-overlay" id="postModal"><div class="modal-content"><h2 id="modalTitle">スクリプトを投稿</h2><form id="postForm"><input type="hidden" id="editDocId"><input type="text" id="postTitle" class="form-control" placeholder="タイトル" required><input type="text" id="postGame" class="form-control" placeholder="ゲーム" required><textarea id="postDesc" class="form-control" placeholder="説明"></textarea><textarea id="postContent" class="form-control code-input" rows="5" placeholder="コード" required></textarea><div style="display:flex; justify-content: flex-end; gap:10px;"><button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">Cancel</button><button type="submit" class="btn btn-primary" id="submitBtn">Publish</button></div></form></div></div>
-  <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>プロフィールをカスタマイズ</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="名前" required><textarea id="editBio" class="form-control" placeholder="自己紹介" rows="3"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">Cancel</button><button type="submit" class="btn btn-primary">Save Changes</button></div></form></div></div>
-  <div class="modal-overlay" id="userProfileModal"><div class="modal-content" style="text-align:center"><img id="viewAvatar" style="width:120px; height:120px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;"><h2 id="viewName"></h2><p id="viewBio" style="color:var(--text-muted); line-height:1.6;"></p><button class="btn btn-secondary" onclick="closeModal('userProfileModal')">Close</button></div></div>
+  <div class="modal-overlay" id="postModal"><div class="modal-content"><h2 id="modalTitle">スクリプトを投稿</h2><form id="postForm"><input type="hidden" id="editDocId"><input type="text" id="postTitle" class="form-control" placeholder="タイトル" required><input type="text" id="postGame" class="form-control" placeholder="ゲーム名" required><textarea id="postDesc" class="form-control" placeholder="説明文"></textarea><textarea id="postContent" class="form-control code-input" rows="5" placeholder="Lua コード" required></textarea><div style="display:flex; justify-content: flex-end; gap:10px;"><button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">キャンセル</button><button type="submit" class="btn btn-primary" id="submitBtn">公開する</button></div></form></div></div>
+  <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>プロフィール編集</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="名前" required><textarea id="editBio" class="form-control" placeholder="自己紹介" rows="3"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">キャンセル</button><button type="submit" class="btn btn-primary">変更を保存</button></div></form></div></div>
+  <div class="modal-overlay" id="userProfileModal"><div class="modal-content" style="text-align:center"><img id="viewAvatar" style="width:120px; height:120px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;"><h2 id="viewName"></h2><p id="viewBio" style="color:var(--text-muted); line-height:1.6;"></p><button class="btn btn-secondary" onclick="closeModal('userProfileModal')">閉じる</button></div></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -120,13 +120,13 @@
       const menu = document.getElementById('userDropdown');
       if (user) {
         const uDoc = await getDoc(doc(db, "users", user.uid));
-        currentUserData = uDoc.exists() ? uDoc.data() : { uid: user.uid, name: user.displayName || "User", bio: "", avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` };
+        currentUserData = uDoc.exists() ? uDoc.data() : { uid: user.uid, name: user.displayName || "ユーザー", bio: "", avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` };
         avatarImg.src = currentUserData.avatar;
-        menu.innerHTML = `<div style="padding:12px; border-bottom:1px solid var(--border)"><strong>${currentUserData.name}</strong></div><button class="dropdown-item" onclick="openProfileEdit()">⚙️ プロフィールをカスタマイズ</button><button class="dropdown-item" id="logoutBtn" style="color:var(--danger)">🚪 ログアウト</button>`;
+        menu.innerHTML = `<div style="padding:12px; border-bottom:1px solid var(--border)"><strong>${currentUserData.name}</strong></div><button class="dropdown-item" onclick="openProfileEdit()">⚙️ プロフィール編集</button><button class="dropdown-item" id="logoutBtn" style="color:var(--danger)">🚪 ログアウト</button>`;
         document.getElementById('logoutBtn').onclick = () => signOut(auth);
       } else {
         currentUserData = null; avatarImg.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
-        menu.innerHTML = `<button class="dropdown-item" onclick="window.location.href='${LOGIN_PAGE}'">🔑 ログイン / サインイン</button>`;
+        menu.innerHTML = `<button class="dropdown-item" onclick="window.location.href='${LOGIN_PAGE}'">🔑 ログイン / 新規登録</button>`;
       }
       render();
     });
@@ -179,18 +179,18 @@
     };
 
     window.handleLike = async (id, isLiked) => { if(!requireAuth()) return; await updateDoc(doc(db, "scripts", id), { likes: increment(isLiked ? -1 : 1), likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) }); };
-    window.handleDelete = async (id) => { if(requireAuth() && confirm("Delete?")) await deleteDoc(doc(db, "scripts", id)); };
+    window.handleDelete = async (id) => { if(requireAuth() && confirm("削除しますか？")) await deleteDoc(doc(db, "scripts", id)); };
     document.getElementById('postForm').onsubmit = async (e) => { e.preventDefault(); if (!requireAuth()) return; const id = document.getElementById('editDocId').value; const data = { title: document.getElementById('postTitle').value, game: document.getElementById('postGame').value, desc: document.getElementById('postDesc').value, content: document.getElementById('postContent').value, updatedAt: Date.now() }; if (id) { await updateDoc(doc(db, "scripts", id), data); } else { await addDoc(collection(db, "scripts"), { ...data, authorName: currentUserData.name, authorAvatar: currentUserData.avatar, authorUid: auth.currentUser.uid, likes: 0, likedBy: [], comments: [], createdAt: Date.now() }); } closeModal('postModal'); e.target.reset(); document.getElementById('editDocId').value = ""; };
     window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; document.getElementById('editPreview').style.display='block'; openModal('profileEditModal'); };
     document.getElementById('profileEditForm').onsubmit = async (e) => { e.preventDefault(); const upd = { name: document.getElementById('editName').value, bio: document.getElementById('editBio').value, avatar: document.getElementById('editPreview').src }; await updateDoc(doc(db, "users", auth.currentUser.uid), upd); closeModal('profileEditModal'); };
     document.getElementById('editFile').onchange = (e) => { const r = new FileReader(); r.onload = (ev) => { document.getElementById('editPreview').src = ev.target.result; document.getElementById('editPreview').style.display = 'block'; }; r.readAsDataURL(e.target.files[0]); };
-    window.copyCode = (txt, btn) => { navigator.clipboard.writeText(txt); btn.textContent = 'コピーしました!'; setTimeout(() => btn.textContent = 'コードをコピー', 1500); };
+    window.copyCode = (txt, btn) => { navigator.clipboard.writeText(txt); btn.textContent = 'コピー完了！'; setTimeout(() => btn.textContent = 'コードをコピー', 1500); };
     window.toggleComments = (id) => { const el = document.getElementById(`comments-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; };
     window.openModal = (id) => document.getElementById(id).style.display = 'flex';
     window.closeModal = (id) => document.getElementById(id).style.display = 'none';
     window.toggleDropdown = () => { const d = document.getElementById('userDropdown'); d.style.display = d.style.display === 'flex' ? 'none' : 'flex'; };
     window.toggleCardMenu = (id) => { const m = document.getElementById(`menu-${id}`); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
-    window.openEditModal = (id) => { const s = scripts.find(x => x.id === id); document.getElementById('editDocId').value = id; document.getElementById('postTitle').value = s.title; document.getElementById('postGame').value = s.game; document.getElementById('postDesc').value = s.desc; document.getElementById('postContent').value = s.content; document.getElementById('modalTitle').innerText = "Edit Script"; openModal('postModal'); };
+    window.openEditModal = (id) => { const s = scripts.find(x => x.id === id); document.getElementById('editDocId').value = id; document.getElementById('postTitle').value = s.title; document.getElementById('postGame').value = s.game; document.getElementById('postDesc').value = s.desc; document.getElementById('postContent').value = s.content; document.getElementById('modalTitle').innerText = "スクリプトを編集"; openModal('postModal'); };
     
     window.showUser = async (uid) => { 
       const u = await getDoc(doc(db, "users", uid)); 
@@ -198,7 +198,7 @@
         const d = u.data(); 
         document.getElementById('viewName').innerText = d.name; 
         document.getElementById('viewAvatar').src = d.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`; 
-        document.getElementById('viewBio').innerText = d.bio || "説明がありません"; 
+        document.getElementById('viewBio').innerText = d.bio || "自己紹介はありません。"; 
         openModal('userProfileModal'); 
       } 
     };
