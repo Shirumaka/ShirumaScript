@@ -1,234 +1,385 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShirumaScripts - メイン</title>
-  <style>
-    :root {
-      --primary: #6366f1; --primary-hover: #4f46e5;
-      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-      --card-bg: rgba(30, 41, 59, 0.7); --input-bg: rgba(15, 23, 42, 0.6);
-      --text: #f8fafc; --text-muted: #94a3b8; --border: rgba(255, 255, 255, 0.1);
-      --heart: #f43f5e; --danger: #ef4444;
-    }
-    body { font-family: 'Inter', sans-serif; background: var(--bg-gradient); margin: 0; color: var(--text); min-height: 100vh; overflow-x: hidden; }
-    .bg-blur { position: fixed; width: 60vw; height: 60vw; background: var(--primary); filter: blur(150px); border-radius: 50%; z-index: -1; opacity: 0.1; top: -10%; left: -10%; }
-    
-    header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 5%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-    .logo { font-size: 1.5rem; font-weight: 800; color: #fff; text-decoration: none; }
-    .logo span { color: var(--primary); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShirumaScripts</title>
 
-    .nav-actions { display: flex; align-items: center; gap: 1.2rem; }
-    .btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; font-size: 0.9rem; }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-secondary { background: #334155; color: white; }
+<style>
 
-    .user-menu-container { position: relative; }
-    .avatar-btn { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--primary); cursor: pointer; object-fit: cover; background: #334155; }
-    .dropdown-menu { position: absolute; top: 55px; right: 0; background: #1e293b; border: 1px solid var(--border); border-radius: 12px; width: 220px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
-    .dropdown-item { padding: 12px 16px; font-size: 0.9rem; cursor: pointer; border: none; background: none; color: white; text-align: left; }
-    .dropdown-item:hover { background: rgba(255,255,255,0.05); color: var(--primary); }
+body{
+font-family:sans-serif;
+background:#0f172a;
+color:white;
+margin:0;
+}
 
-    main { padding: 2rem 5%; max-width: 1200px; margin: 0 auto; }
-    .hero { text-align: center; margin-bottom: 3rem; }
-    .hero h1 { font-size: 3rem; margin: 0; letter-spacing: -2px; }
-    .hero h1 span { color: var(--primary); }
+header{
+display:flex;
+justify-content:space-between;
+padding:15px;
+background:#020617;
+}
 
-    .search-container { position: relative; max-width: 500px; margin: 2rem auto; }
-    .search-input { width: 100%; padding: 1.2rem 3.5rem; background: var(--input-bg); border: 1px solid var(--border); border-radius: 3rem; color: #fff; box-sizing: border-box; }
+.btn{
+background:#6366f1;
+border:none;
+color:white;
+padding:8px 14px;
+cursor:pointer;
+border-radius:6px;
+}
 
-    .script-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px; }
-    .script-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; transition: 0.3s; position: relative; }
-    
-    .card-menu-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; }
-    .card-menu { position: absolute; top: 45px; right: 15px; background: #1e293b; border: 1px solid var(--border); border-radius: 8px; display: none; flex-direction: column; z-index: 10; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-    
-    .game-tag { color: var(--primary); font-size: 0.85rem; font-weight: 700; margin-top: 5px; display: block; }
-    .script-desc { color: var(--text-muted); font-size: 0.95rem; margin: 15px 0; }
+.script-grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+gap:20px;
+padding:20px;
+}
 
-    .comment-section { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; margin-top: 10px; display: none; }
-    .comment-list { max-height: 180px; overflow-y: auto; font-size: 0.8rem; margin-bottom: 10px; }
-    .comment-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .comment-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 1px solid var(--primary); }
-    .comment-content { flex: 1; }
+.script-card{
+background:#1e293b;
+padding:15px;
+border-radius:10px;
+}
 
-    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px; margin-top: auto; }
-    .author-info { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; }
-    .author-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.comment-section{
+margin-top:10px;
+display:none;
+}
 
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background: #1e293b; padding: 2rem; border-radius: 20px; width: 95%; max-width: 500px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
-    .form-control { width: 100%; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: white; box-sizing: border-box; margin-bottom: 10px; }
-    .code-input { font-family: monospace; background: #0f172a; color: #38bdf8; }
-    .preview-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-top: 10px; border: 2px solid var(--primary); display: none; }
-  </style>
+.form-control{
+width:100%;
+padding:8px;
+margin-bottom:8px;
+background:#020617;
+border:1px solid #334155;
+color:white;
+}
+
+</style>
 </head>
+
 <body>
-  <div class="bg-blur"></div>
 
-  <header>
-    <a href="#" class="logo">Shiruma<span>Scripts</span></a>
-    <div class="nav-actions">
-      <button class="btn btn-primary" id="postBtnMain">スクリプトを投稿</button>
-      <div class="user-menu-container">
-        <img id="headerAvatar" class="avatar-btn" src="" onclick="toggleDropdown()">
-        <div class="dropdown-menu" id="userDropdown"></div>
-      </div>
-    </div>
-  </header>
+<header>
+<h2>ShirumaScripts</h2>
+<button class="btn" id="postBtnMain">投稿</button>
+</header>
 
-  <main>
-    <section class="hero">
-      <h1>理想の<span>スクリプト</span>を見つけよう</h1>
-      <p>カスタマイズ可能なクラウドスクリプトポータル</p>
-    </section>
-    <div class="search-container"><input type="search" id="searchInput" class="search-input" placeholder="スクリプトを検索..."></div>
-    <div class="script-grid" id="scriptGrid"></div>
-  </main>
+<div class="script-grid" id="scriptGrid"></div>
 
-  <div class="modal-overlay" id="postModal"><div class="modal-content"><h2 id="modalTitle">スクリプトを投稿</h2><form id="postForm"><input type="hidden" id="editDocId"><input type="text" id="postTitle" class="form-control" placeholder="タイトル" required><input type="text" id="postGame" class="form-control" placeholder="ゲーム名" required><textarea id="postDesc" class="form-control" placeholder="説明文"></textarea><textarea id="postContent" class="form-control code-input" rows="5" placeholder="Lua コード" required></textarea><div style="display:flex; justify-content: flex-end; gap:10px;"><button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">キャンセル</button><button type="submit" class="btn btn-primary" id="submitBtn">公開する</button></div></form></div></div>
-  <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>プロフィール編集</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="名前" required><textarea id="editBio" class="form-control" placeholder="自己紹介" rows="3"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">キャンセル</button><button type="submit" class="btn btn-primary">変更を保存</button></div></form></div></div>
-  <div class="modal-overlay" id="userProfileModal"><div class="modal-content" style="text-align:center"><img id="viewAvatar" style="width:120px; height:120px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;"><h2 id="viewName"></h2><p id="viewBio" style="color:var(--text-muted); line-height:1.6;"></p><button class="btn btn-secondary" onclick="closeModal('userProfileModal')">閉じる</button></div></div>
+<div id="postModal" style="display:none">
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, increment, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<input id="postTitle" class="form-control" placeholder="タイトル" maxlength="60">
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAqy2H40wFYd86zbFmPurvI8SsV1-x8luU",
-      authDomain: "flutter-ai-playground-96c40.firebaseapp.com",
-      projectId: "flutter-ai-playground-96c40",
-      storageBucket: "flutter-ai-playground-96c40.firebasestorage.app",
-      messagingSenderId: "1063688315774",
-      appId: "1:1063688315774:web:1e5d77f259203c56b4c92f"
-    };
+<input id="postGame" class="form-control" placeholder="ゲーム" maxlength="40">
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const LOGIN_PAGE = "https://shirumaka.github.io/ShirumaScriptLogin/";
+<textarea id="postDesc" class="form-control" placeholder="説明" maxlength="300"></textarea>
 
-    let currentUserData = null;
-    let scripts = [];
+<textarea id="postContent" class="form-control" placeholder="コード" maxlength="5000"></textarea>
 
-    const requireAuth = () => { if (!auth.currentUser) { window.location.href = LOGIN_PAGE; return false; } return true; };
+<button class="btn" id="submitBtn">投稿</button>
 
-    onAuthStateChanged(auth, async (user) => {
-      const avatarImg = document.getElementById('headerAvatar');
-      const menu = document.getElementById('userDropdown');
-      if (user) {
-        const uDoc = await getDoc(doc(db, "users", user.uid));
-        currentUserData = uDoc.exists() ? uDoc.data() : { uid: user.uid, name: user.displayName || "ユーザー", bio: "", avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` };
-        avatarImg.src = currentUserData.avatar;
-        menu.innerHTML = `<div style="padding:12px; border-bottom:1px solid var(--border)"><strong>${currentUserData.name}</strong></div><button class="dropdown-item" onclick="openProfileEdit()">⚙️ プロフィール編集</button><button class="dropdown-item" id="logoutBtn" style="color:var(--danger)">🚪 ログアウト</button>`;
-        document.getElementById('logoutBtn').onclick = () => signOut(auth);
-      } else {
-        currentUserData = null; avatarImg.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
-        menu.innerHTML = `<button class="dropdown-item" onclick="window.location.href='${LOGIN_PAGE}'">🔑 ログイン / 新規登録</button>`;
-      }
-      render();
-    });
+</div>
 
-    onSnapshot(query(collection(db, "scripts"), orderBy("createdAt", "desc")), (snapshot) => {
-      scripts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      render();
-    });
+<script type="module">
 
-    window.render = () => {
-      const grid = document.getElementById('scriptGrid');
-      const term = document.getElementById('searchInput').value.toLowerCase();
-      grid.innerHTML = '';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 
-      scripts.filter(s => s.title.toLowerCase().includes(term)).forEach(s => {
-        const isMine = auth.currentUser && s.authorUid === auth.currentUser.uid;
-        const isLiked = auth.currentUser && s.likedBy?.includes(auth.currentUser.uid);
-        const card = document.createElement('div');
-        card.className = 'script-card';
-        card.innerHTML = `
-          ${isMine ? `<button class="card-menu-btn" onclick="toggleCardMenu('${s.id}')">⋮</button><div class="card-menu" id="menu-${s.id}"><button class="dropdown-item" onclick="openEditModal('${s.id}')">✏️ 編集</button><button class="dropdown-item" style="color:var(--danger)" onclick="handleDelete('${s.id}')">🗑️ 削除</button></div>` : ''}
-          <div class="card-header"><h3>${s.title}</h3><span class="game-tag">${s.game}</span></div>
-          <p class="script-desc">${s.desc}</p>
-          <div style="display:flex; gap:15px; margin-bottom:10px;">
-            <button class="btn" style="background:none; color:${isLiked ? '#f43f5e' : '#94a3b8'}" onclick="handleLike('${s.id}', ${isLiked})">${isLiked ? '❤️' : '🤍'} ${s.likes || 0}</button>
-            <button class="btn" style="background:none; color:var(--primary); font-size:0.8rem;" onclick="toggleComments('${s.id}')">💬 ${s.comments?.length || 0} コメント</button>
-          </div>
-          <div id="comments-${s.id}" class="comment-section">
-            <div class="comment-list">${(s.comments || []).map(c => `
-              <div class="comment-item">
-                <img src="${c.a || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'}" class="comment-avatar" onclick="showUser('${c.uid}')">
-                <div class="comment-content"><strong>${c.u}:</strong> ${c.t}</div>
-              </div>`).join('')}</div>
-            <div style="display:flex; gap:5px;"><input type="text" id="input-${s.id}" class="form-control" style="margin:0; padding:5px; font-size:0.8rem;" placeholder="コメントを追加..."><button class="btn btn-primary" style="padding:4px 8px;" onclick="handleAddComment('${s.id}')">投稿</button></div>
-          </div>
-          <div class="card-footer">
-            <div class="author-info" onclick="showUser('${s.authorUid}')"><img src="${s.authorAvatar}" class="author-avatar"><span>${s.authorName}</span></div>
-            <button class="btn btn-primary btn-copy" style="font-size:0.7rem; padding:5px 10px;" data-id="${s.id}">コードをコピー</button>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-      
-      document.querySelectorAll('.btn-copy').forEach(btn => {
-        btn.onclick = () => {
-          const scriptId = btn.getAttribute('data-id');
-          const script = scripts.find(x => x.id === scriptId);
-          if (script) copyCode(script.content, btn);
-        };
-      });
-    };
+import {
+getAuth,
+onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    window.handleAddComment = async (id) => {
-      const input = document.getElementById(`input-${id}`);
-      if (!requireAuth() || !input.value.trim()) return;
-      await updateDoc(doc(db, "scripts", id), { comments: arrayUnion({ u: currentUserData.name, a: currentUserData.avatar, t: input.value, uid: auth.currentUser.uid }) });
-      input.value = '';
-    };
+import {
+getFirestore,
+collection,
+addDoc,
+onSnapshot,
+query,
+orderBy,
+doc,
+updateDoc,
+arrayUnion,
+increment
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    window.handleLike = async (id, isLiked) => { if(!requireAuth()) return; await updateDoc(doc(db, "scripts", id), { likes: increment(isLiked ? -1 : 1), likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) }); };
-    window.handleDelete = async (id) => { if(requireAuth() && confirm("削除しますか？")) await deleteDoc(doc(db, "scripts", id)); };
-    document.getElementById('postForm').onsubmit = async (e) => { e.preventDefault(); if (!requireAuth()) return; const id = document.getElementById('editDocId').value; const data = { title: document.getElementById('postTitle').value, game: document.getElementById('postGame').value, desc: document.getElementById('postDesc').value, content: document.getElementById('postContent').value, updatedAt: Date.now() }; if (id) { await updateDoc(doc(db, "scripts", id), data); } else { await addDoc(collection(db, "scripts"), { ...data, authorName: currentUserData.name, authorAvatar: currentUserData.avatar, authorUid: auth.currentUser.uid, likes: 0, likedBy: [], comments: [], createdAt: Date.now() }); } closeModal('postModal'); e.target.reset(); document.getElementById('editDocId').value = ""; };
-    window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; document.getElementById('editPreview').style.display='block'; openModal('profileEditModal'); };
-    document.getElementById('profileEditForm').onsubmit = async (e) => { e.preventDefault(); const upd = { name: document.getElementById('editName').value, bio: document.getElementById('editBio').value, avatar: document.getElementById('editPreview').src }; await updateDoc(doc(db, "users", auth.currentUser.uid), upd); closeModal('profileEditModal'); };
-    document.getElementById('editFile').onchange = (e) => { const r = new FileReader(); r.onload = (ev) => { document.getElementById('editPreview').src = ev.target.result; document.getElementById('editPreview').style.display = 'block'; }; r.readAsDataURL(e.target.files[0]); };
-    
-    window.copyCode = (txt, btn) => {
-      if (!navigator.clipboard) {
-        const textArea = document.createElement("textarea");
-        textArea.value = txt;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-      } else {
-        navigator.clipboard.writeText(txt);
-      }
-      btn.textContent = 'コピー完了！';
-      setTimeout(() => btn.textContent = 'コードをコピー', 1500);
-    };
+const firebaseConfig = {
+apiKey:"AIzaSyAqy2H40wFYd86zbFmPurvI8SsV1-x8luU",
+authDomain:"flutter-ai-playground-96c40.firebaseapp.com",
+projectId:"flutter-ai-playground-96c40"
+};
 
-    window.toggleComments = (id) => { const el = document.getElementById(`comments-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; };
-    window.openModal = (id) => document.getElementById(id).style.display = 'flex';
-    window.closeModal = (id) => document.getElementById(id).style.display = 'none';
-    window.toggleDropdown = () => { const d = document.getElementById('userDropdown'); d.style.display = d.style.display === 'flex' ? 'none' : 'flex'; };
-    window.toggleCardMenu = (id) => { const m = document.getElementById(`menu-${id}`); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
-    window.openEditModal = (id) => { const s = scripts.find(x => x.id === id); document.getElementById('editDocId').value = id; document.getElementById('postTitle').value = s.title; document.getElementById('postGame').value = s.game; document.getElementById('postDesc').value = s.desc; document.getElementById('postContent').value = s.content; document.getElementById('modalTitle').innerText = "スクリプトを編集"; openModal('postModal'); };
-    
-    window.showUser = async (uid) => { 
-      const u = await getDoc(doc(db, "users", uid)); 
-      if(u.exists()){ 
-        const d = u.data(); 
-        document.getElementById('viewName').innerText = d.name; 
-        document.getElementById('viewAvatar').src = d.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`; 
-        document.getElementById('viewBio').innerText = d.bio || "自己紹介はありません。"; 
-        openModal('userProfileModal'); 
-      } 
-    };
+const app = initializeApp(firebaseConfig);
 
-    document.getElementById('postBtnMain').onclick = () => requireAuth() ? openModal('postModal') : null;
-    document.getElementById('searchInput').oninput = render;
-    window.onclick = (e) => { if(e.target.className === 'modal-overlay') e.target.style.display = 'none'; if(!e.target.closest('.card-menu-btn')) document.querySelectorAll('.card-menu').forEach(m => m.style.display='none'); if(!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none'; };
-  </script>
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let scripts=[];
+
+let lastPostTime=0;
+let lastCommentTime=0;
+
+/* NGワード */
+
+const bannedWords=[
+"fuck",
+"shit",
+"porn",
+"sex",
+"nigger",
+"kill",
+"die"
+];
+
+/* 判定 */
+
+function badWord(text){
+
+const t=text.toLowerCase();
+
+return bannedWords.some(w=>t.includes(w));
+
+}
+
+function spam(text){
+
+const url=(text.match(/http/g)||[]).length;
+
+if(url>=3)return true;
+
+if(text.length>2000)return true;
+
+return false;
+
+}
+
+/* 投稿 */
+
+document.getElementById("submitBtn").onclick=async()=>{
+
+if(!auth.currentUser)return;
+
+if(Date.now()-lastPostTime<30000){
+
+alert("投稿は30秒待ってください");
+
+return;
+
+}
+
+const title=document.getElementById("postTitle").value.trim();
+const game=document.getElementById("postGame").value.trim();
+const desc=document.getElementById("postDesc").value.trim();
+const content=document.getElementById("postContent").value.trim();
+
+if(!title||!content){
+
+alert("入力してください");
+
+return;
+
+}
+
+if(badWord(title)||badWord(desc)||badWord(content)){
+
+alert("禁止ワード");
+
+return;
+
+}
+
+if(spam(title)||spam(desc)){
+
+alert("スパム検出");
+
+return;
+
+}
+
+if(content.length<10){
+
+alert("コード短すぎ");
+
+return;
+
+}
+
+/* 投稿上限 */
+
+const userPosts=scripts.filter(s=>s.authorUid===auth.currentUser.uid).length;
+
+if(userPosts>=20){
+
+alert("投稿上限");
+
+return;
+
+}
+
+lastPostTime=Date.now();
+
+await addDoc(collection(db,"scripts"),{
+
+title,
+game,
+desc,
+content,
+
+authorUid:auth.currentUser.uid,
+
+likes:0,
+likedBy:[],
+comments:[],
+
+createdAt:Date.now()
+
+});
+
+};
+
+/* コメント */
+
+window.addComment=async(id)=>{
+
+if(!auth.currentUser)return;
+
+if(Date.now()-lastCommentTime<5000){
+
+alert("コメントは5秒待ってください");
+
+return;
+
+}
+
+const input=document.getElementById("c-"+id);
+
+const text=input.value.trim();
+
+if(!text)return;
+
+if(text.length>120){
+
+alert("長すぎ");
+
+return;
+
+}
+
+if(badWord(text)){
+
+alert("禁止ワード");
+
+return;
+
+}
+
+if(spam(text)){
+
+alert("スパム");
+
+return;
+
+}
+
+lastCommentTime=Date.now();
+
+await updateDoc(doc(db,"scripts",id),{
+
+comments:arrayUnion({
+
+t:text,
+uid:auth.currentUser.uid
+
+})
+
+});
+
+input.value="";
+
+};
+
+/* 表示 */
+
+onSnapshot(
+
+query(collection(db,"scripts"),orderBy("createdAt","desc")),
+
+(snap)=>{
+
+scripts=snap.docs.map(d=>({
+
+id:d.id,
+...d.data()
+
+}));
+
+render();
+
+}
+
+);
+
+/* 描画 */
+
+function render(){
+
+const grid=document.getElementById("scriptGrid");
+
+grid.innerHTML="";
+
+scripts.forEach(s=>{
+
+const el=document.createElement("div");
+
+el.className="script-card";
+
+el.innerHTML=`
+
+<h3>${s.title}</h3>
+
+<p>${s.desc||""}</p>
+
+<button onclick="toggle('${s.id}')">
+
+コメント (${s.comments?.length||0})
+
+</button>
+
+<div class="comment-section" id="com-${s.id}">
+
+${(s.comments||[]).map(c=>`
+
+<div>${c.t}</div>
+
+`).join("")}
+
+<input id="c-${s.id}" class="form-control">
+
+<button onclick="addComment('${s.id}')">送信</button>
+
+</div>
+
+`;
+
+grid.appendChild(el);
+
+});
+
+}
+
+/* コメント表示 */
+
+window.toggle=id=>{
+
+const el=document.getElementById("com-"+id);
+
+el.style.display=el.style.display==="block"?"none":"block";
+
+};
+
+</script>
+
 </body>
 </html>
