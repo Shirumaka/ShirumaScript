@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShirumaScripts - Professional Edition</title>
+  <title>ShirumaScripts - Ultimate Complete</title>
   <style>
     :root {
       --primary: #6366f1; --primary-hover: #4f46e5;
@@ -48,9 +48,9 @@
     .script-desc { color: var(--text-muted); font-size: 0.95rem; margin: 15px 0; }
 
     .comment-section { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; margin-top: 10px; display: none; }
-    .comment-list { max-height: 150px; overflow-y: auto; font-size: 0.8rem; margin-bottom: 10px; }
-    .comment-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .comment-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+    .comment-list { max-height: 180px; overflow-y: auto; font-size: 0.8rem; margin-bottom: 10px; }
+    .comment-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .comment-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 1px solid var(--primary); }
     .comment-content { flex: 1; }
 
     .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px; margin-top: auto; }
@@ -89,7 +89,7 @@
 
   <div class="modal-overlay" id="postModal"><div class="modal-content"><h2 id="modalTitle">Post Script</h2><form id="postForm"><input type="hidden" id="editDocId"><input type="text" id="postTitle" class="form-control" placeholder="Title" required><input type="text" id="postGame" class="form-control" placeholder="Game" required><textarea id="postDesc" class="form-control" placeholder="Description"></textarea><textarea id="postContent" class="form-control code-input" rows="5" placeholder="Lua Code" required></textarea><div style="display:flex; justify-content: flex-end; gap:10px;"><button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">Cancel</button><button type="submit" class="btn btn-primary" id="submitBtn">Publish</button></div></form></div></div>
   <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>Edit Profile</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="Name" required><textarea id="editBio" class="form-control" placeholder="Bio" rows="3"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">Cancel</button><button type="submit" class="btn btn-primary">Save Changes</button></div></form></div></div>
-  <div class="modal-overlay" id="userProfileModal"><div class="modal-content" style="text-align:center"><img id="viewAvatar" style="width:100px; height:100px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;"><h2 id="viewName"></h2><p id="viewBio" style="color:var(--text-muted)"></p><button class="btn btn-secondary" onclick="closeModal('userProfileModal')">Close</button></div></div>
+  <div class="modal-overlay" id="userProfileModal"><div class="modal-content" style="text-align:center"><img id="viewAvatar" style="width:120px; height:120px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;"><h2 id="viewName"></h2><p id="viewBio" style="color:var(--text-muted); line-height:1.6;"></p><button class="btn btn-secondary" onclick="closeModal('userProfileModal')">Close</button></div></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -157,7 +157,7 @@
           <div id="comments-${s.id}" class="comment-section">
             <div class="comment-list">${(s.comments || []).map(c => `
               <div class="comment-item">
-                <img src="${c.a || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'}" class="comment-avatar">
+                <img src="${c.a || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'}" class="comment-avatar" onclick="showUser('${c.uid}')">
                 <div class="comment-content"><strong>${c.u}:</strong> ${c.t}</div>
               </div>`).join('')}</div>
             <div style="display:flex; gap:5px;"><input type="text" id="input-${s.id}" class="form-control" style="margin:0; padding:5px; font-size:0.8rem;" placeholder="Add comment..."><button class="btn btn-primary" style="padding:4px 8px;" onclick="handleAddComment('${s.id}')">Post</button></div>
@@ -191,7 +191,18 @@
     window.toggleDropdown = () => { const d = document.getElementById('userDropdown'); d.style.display = d.style.display === 'flex' ? 'none' : 'flex'; };
     window.toggleCardMenu = (id) => { const m = document.getElementById(`menu-${id}`); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
     window.openEditModal = (id) => { const s = scripts.find(x => x.id === id); document.getElementById('editDocId').value = id; document.getElementById('postTitle').value = s.title; document.getElementById('postGame').value = s.game; document.getElementById('postDesc').value = s.desc; document.getElementById('postContent').value = s.content; document.getElementById('modalTitle').innerText = "Edit Script"; openModal('postModal'); };
-    window.showUser = async (uid) => { const u = await getDoc(doc(db, "users", uid)); if(u.exists()){ const d = u.data(); document.getElementById('viewName').innerText = d.name; document.getElementById('viewAvatar').src = d.avatar; document.getElementById('viewBio').innerText = d.bio; openModal('userProfileModal'); } };
+    
+    window.showUser = async (uid) => { 
+      const u = await getDoc(doc(db, "users", uid)); 
+      if(u.exists()){ 
+        const d = u.data(); 
+        document.getElementById('viewName').innerText = d.name; 
+        document.getElementById('viewAvatar').src = d.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`; 
+        document.getElementById('viewBio').innerText = d.bio || "No bio available."; 
+        openModal('userProfileModal'); 
+      } 
+    };
+
     document.getElementById('postBtnMain').onclick = () => requireAuth() ? openModal('postModal') : null;
     document.getElementById('searchInput').oninput = render;
     window.onclick = (e) => { if(e.target.className === 'modal-overlay') e.target.style.display = 'none'; if(!e.target.closest('.card-menu-btn')) document.querySelectorAll('.card-menu').forEach(m => m.style.display='none'); if(!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none'; };
