@@ -41,11 +41,15 @@
     .script-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px; }
     .script-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; transition: 0.3s; position: relative; }
     
-    .card-menu-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; padding: 5px; }
+    .card-menu-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; }
     .card-menu { position: absolute; top: 45px; right: 15px; background: #1e293b; border: 1px solid var(--border); border-radius: 8px; display: none; flex-direction: column; z-index: 10; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
     
     .game-tag { color: var(--primary); font-size: 0.85rem; font-weight: 700; margin-top: 5px; display: block; }
     .script-desc { color: var(--text-muted); font-size: 0.95rem; margin: 15px 0; }
+
+    .comment-section { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; margin-top: 10px; display: none; }
+    .comment-list { max-height: 120px; overflow-y: auto; font-size: 0.8rem; margin-bottom: 10px; }
+    .comment-item { margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
     .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px; margin-top: auto; }
     .author-info { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; }
@@ -149,7 +153,6 @@
     let currentUserData = null;
     let scripts = [];
 
-    // ログイン必須チェック
     const requireAuth = () => {
       if (!auth.currentUser) {
         window.location.href = LOGIN_PAGE;
@@ -158,7 +161,6 @@
       return true;
     };
 
-    // --- ユーザー状態監視 ---
     onAuthStateChanged(auth, async (user) => {
       const avatarImg = document.getElementById('headerAvatar');
       const menu = document.getElementById('userDropdown');
@@ -178,7 +180,6 @@
       render();
     });
 
-    // --- データ監視 ---
     onSnapshot(query(collection(db, "scripts"), orderBy("createdAt", "desc")), (snapshot) => {
       scripts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       render();
@@ -201,6 +202,11 @@
           <p class="script-desc">${s.desc}</p>
           <div style="display:flex; gap:15px; margin-bottom:10px;">
             <button class="btn" style="background:none; color:${isLiked ? '#f43f5e' : '#94a3b8'}" onclick="handleLike('${s.id}', ${isLiked})">${isLiked ? '❤️' : '🤍'} ${s.likes || 0}</button>
+            <button class="btn" style="background:none; color:var(--primary); font-size:0.8rem;" onclick="toggleComments('${s.id}')">💬 ${s.comments?.length || 0} Comments</button>
+          </div>
+          <div id="comments-${s.id}" class="comment-section">
+            <div class="comment-list">${(s.comments || []).map(c => `<div class="comment-item"><strong>${c.u}:</strong> ${c.t}</div>`).join('')}</div>
+            <div style="display:flex; gap:5px;"><input type="text" id="input-${s.id}" class="form-control" style="margin:0; padding:5px; font-size:0.8rem;" placeholder="Add comment..."><button class="btn btn-primary" style="padding:4px 8px;" onclick="handleAddComment('${s.id}')">Post</button></div>
           </div>
           <div class="card-footer">
             <div class="author-info" onclick="showUser('${s.authorUid}')"><img src="${s.authorAvatar}" class="author-avatar"><span>${s.authorName}</span></div>
@@ -211,9 +217,15 @@
       });
     };
 
-    // --- 投稿・編集・削除 ---
-    window.handleDelete = async (id) => { if(requireAuth() && confirm("Delete?")) await deleteDoc(doc(db, "scripts", id)); };
+    window.handleAddComment = async (id) => {
+      const input = document.getElementById(`input-${id}`);
+      if (!requireAuth() || !input.value.trim()) return;
+      await updateDoc(doc(db, "scripts", id), { comments: arrayUnion({ u: currentUserData.name, t: input.value, uid: auth.currentUser.uid }) });
+      input.value = '';
+    };
+
     window.handleLike = async (id, isLiked) => { if(!requireAuth()) return; await updateDoc(doc(db, "scripts", id), { likes: increment(isLiked ? -1 : 1), likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) }); };
+    window.handleDelete = async (id) => { if(requireAuth() && confirm("Delete?")) await deleteDoc(doc(db, "scripts", id)); };
 
     document.getElementById('postForm').onsubmit = async (e) => {
       e.preventDefault();
@@ -225,18 +237,17 @@
       closeModal('postModal'); e.target.reset(); document.getElementById('editDocId').value = "";
     };
 
-    // --- プロフィール編集 ---
     window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; document.getElementById('editPreview').style.display='block'; openModal('profileEditModal'); };
     document.getElementById('profileEditForm').onsubmit = async (e) => { e.preventDefault(); const upd = { name: document.getElementById('editName').value, bio: document.getElementById('editBio').value, avatar: document.getElementById('editPreview').src }; await updateDoc(doc(db, "users", auth.currentUser.uid), upd); closeModal('profileEditModal'); };
     document.getElementById('editFile').onchange = (e) => { const r = new FileReader(); r.onload = (ev) => { document.getElementById('editPreview').src = ev.target.result; document.getElementById('editPreview').style.display = 'block'; }; r.readAsDataURL(e.target.files[0]); };
 
-    // --- UI/Modal ---
     window.copyCode = (txt, btn) => { navigator.clipboard.writeText(txt); btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy Code', 1500); };
+    window.toggleComments = (id) => { const el = document.getElementById(`comments-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; };
     window.openModal = (id) => document.getElementById(id).style.display = 'flex';
     window.closeModal = (id) => document.getElementById(id).style.display = 'none';
     window.toggleDropdown = () => { const d = document.getElementById('userDropdown'); d.style.display = d.style.display === 'flex' ? 'none' : 'flex'; };
     window.toggleCardMenu = (id) => { const m = document.getElementById(`menu-${id}`); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
-    window.openEditModal = (id) => { const s = scripts.find(x => x.id === id); document.getElementById('editDocId').value = id; document.getElementById('postTitle').value = s.title; document.getElementById('postGame').value = s.game; document.getElementById('postDesc').value = s.desc; document.getElementById('postContent').value = s.content; document.getElementById('modalTitle').innerText = "Edit Script"; document.getElementById('submitBtn').innerText = "Update"; openModal('postModal'); };
+    window.openEditModal = (id) => { const s = scripts.find(x => x.id === id); document.getElementById('editDocId').value = id; document.getElementById('postTitle').value = s.title; document.getElementById('postGame').value = s.game; document.getElementById('postDesc').value = s.desc; document.getElementById('postContent').value = s.content; document.getElementById('modalTitle').innerText = "Edit Script"; openModal('postModal'); };
     window.showUser = async (uid) => { const u = await getDoc(doc(db, "users", uid)); if(u.exists()){ const d = u.data(); document.getElementById('viewName').innerText = d.name; document.getElementById('viewAvatar').src = d.avatar; document.getElementById('viewBio').innerText = d.bio; openModal('userProfileModal'); } };
     
     document.getElementById('postBtnMain').onclick = () => requireAuth() ? openModal('postModal') : null;
