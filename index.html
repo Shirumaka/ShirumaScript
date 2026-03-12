@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShirumaScripts - Ultimate Complete</title>
+  <title>Shiruma Scripts - Main</title>
   <style>
     :root {
       --primary: #6366f1; --primary-hover: #4f46e5;
@@ -70,7 +70,7 @@
   <header>
     <a href="#" class="logo">Shiruma<span>Scripts</span></a>
     <div class="nav-actions">
-      <button class="btn btn-primary" id="postBtnMain">Post Script</button>
+      <button class="btn btn-primary" id="postBtnMain">スクリプトを投稿</button>
       <div class="user-menu-container">
         <img id="headerAvatar" class="avatar-btn" src="" onclick="toggleDropdown()">
         <div class="dropdown-menu" id="userDropdown"></div>
@@ -80,15 +80,15 @@
 
   <main>
     <section class="hero">
-      <h1>Find your next <span>Script</span>.</h1>
-      <p>Customizable Cloud Script Portal</p>
+      <h1>スクリプトを人々と共有できる<span>Shiruma Script</span>.</h1>
+      <p>今すぐにログインしてスクリプトを投稿しよう。</p>
     </section>
-    <div class="search-container"><input type="search" id="searchInput" class="search-input" placeholder="Search scripts..."></div>
+    <div class="search-container"><input type="search" id="searchInput" class="search-input" placeholder="スクリプトを検索..."></div>
     <div class="script-grid" id="scriptGrid"></div>
   </main>
 
-  <div class="modal-overlay" id="postModal"><div class="modal-content"><h2 id="modalTitle">Post Script</h2><form id="postForm"><input type="hidden" id="editDocId"><input type="text" id="postTitle" class="form-control" placeholder="Title" required><input type="text" id="postGame" class="form-control" placeholder="Game" required><textarea id="postDesc" class="form-control" placeholder="Description"></textarea><textarea id="postContent" class="form-control code-input" rows="5" placeholder="Lua Code" required></textarea><div style="display:flex; justify-content: flex-end; gap:10px;"><button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">Cancel</button><button type="submit" class="btn btn-primary" id="submitBtn">Publish</button></div></form></div></div>
-  <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>Edit Profile</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="Name" required><textarea id="editBio" class="form-control" placeholder="Bio" rows="3"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">Cancel</button><button type="submit" class="btn btn-primary">Save Changes</button></div></form></div></div>
+  <div class="modal-overlay" id="postModal"><div class="modal-content"><h2 id="modalTitle">スクリプトを投稿</h2><form id="postForm"><input type="hidden" id="editDocId"><input type="text" id="postTitle" class="form-control" placeholder="Title" required><input type="text" id="postGame" class="form-control" placeholder="Game" required><textarea id="postDesc" class="form-control" placeholder="Description"></textarea><textarea id="postContent" class="form-control code-input" rows="5" placeholder="Lua Code" required></textarea><div style="display:flex; justify-content: flex-end; gap:10px;"><button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">Cancel</button><button type="submit" class="btn btn-primary" id="submitBtn">Publish</button></div></form></div></div>
+  <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>プロフィールをカスタマイズ</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="Name" required><textarea id="editBio" class="form-control" placeholder="Bio" rows="3"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">Cancel</button><button type="submit" class="btn btn-primary">Save Changes</button></div></form></div></div>
   <div class="modal-overlay" id="userProfileModal"><div class="modal-content" style="text-align:center"><img id="viewAvatar" style="width:120px; height:120px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;"><h2 id="viewName"></h2><p id="viewBio" style="color:var(--text-muted); line-height:1.6;"></p><button class="btn btn-secondary" onclick="closeModal('userProfileModal')">Close</button></div></div>
 
   <script type="module">
@@ -122,11 +122,11 @@
         const uDoc = await getDoc(doc(db, "users", user.uid));
         currentUserData = uDoc.exists() ? uDoc.data() : { uid: user.uid, name: user.displayName || "User", bio: "", avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` };
         avatarImg.src = currentUserData.avatar;
-        menu.innerHTML = `<div style="padding:12px; border-bottom:1px solid var(--border)"><strong>${currentUserData.name}</strong></div><button class="dropdown-item" onclick="openProfileEdit()">⚙️ Edit Profile</button><button class="dropdown-item" id="logoutBtn" style="color:var(--danger)">🚪 Log Out</button>`;
+        menu.innerHTML = `<div style="padding:12px; border-bottom:1px solid var(--border)"><strong>${currentUserData.name}</strong></div><button class="dropdown-item" onclick="openProfileEdit()">⚙️ プロフィールをカスタマイズ</button><button class="dropdown-item" id="logoutBtn" style="color:var(--danger)">🚪 ログアウト</button>`;
         document.getElementById('logoutBtn').onclick = () => signOut(auth);
       } else {
         currentUserData = null; avatarImg.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
-        menu.innerHTML = `<button class="dropdown-item" onclick="window.location.href='${LOGIN_PAGE}'">🔑 Login / Sign Up</button>`;
+        menu.innerHTML = `<button class="dropdown-item" onclick="window.location.href='${LOGIN_PAGE}'">🔑 ログイン / サインイン</button>`;
       }
       render();
     });
@@ -147,12 +147,12 @@
         const card = document.createElement('div');
         card.className = 'script-card';
         card.innerHTML = `
-          ${isMine ? `<button class="card-menu-btn" onclick="toggleCardMenu('${s.id}')">⋮</button><div class="card-menu" id="menu-${s.id}"><button class="dropdown-item" onclick="openEditModal('${s.id}')">✏️ Edit</button><button class="dropdown-item" style="color:var(--danger)" onclick="handleDelete('${s.id}')">🗑️ Delete</button></div>` : ''}
+          ${isMine ? `<button class="card-menu-btn" onclick="toggleCardMenu('${s.id}')">⋮</button><div class="card-menu" id="menu-${s.id}"><button class="dropdown-item" onclick="openEditModal('${s.id}')">✏️ 編集</button><button class="dropdown-item" style="color:var(--danger)" onclick="handleDelete('${s.id}')">🗑️ 削除</button></div>` : ''}
           <div class="card-header"><h3>${s.title}</h3><span class="game-tag">${s.game}</span></div>
           <p class="script-desc">${s.desc}</p>
           <div style="display:flex; gap:15px; margin-bottom:10px;">
             <button class="btn" style="background:none; color:${isLiked ? '#f43f5e' : '#94a3b8'}" onclick="handleLike('${s.id}', ${isLiked})">${isLiked ? '❤️' : '🤍'} ${s.likes || 0}</button>
-            <button class="btn" style="background:none; color:var(--primary); font-size:0.8rem;" onclick="toggleComments('${s.id}')">💬 ${s.comments?.length || 0} Comments</button>
+            <button class="btn" style="background:none; color:var(--primary); font-size:0.8rem;" onclick="toggleComments('${s.id}')">💬 ${s.comments?.length || 0} コメント</button>
           </div>
           <div id="comments-${s.id}" class="comment-section">
             <div class="comment-list">${(s.comments || []).map(c => `
@@ -184,7 +184,7 @@
     window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; document.getElementById('editPreview').style.display='block'; openModal('profileEditModal'); };
     document.getElementById('profileEditForm').onsubmit = async (e) => { e.preventDefault(); const upd = { name: document.getElementById('editName').value, bio: document.getElementById('editBio').value, avatar: document.getElementById('editPreview').src }; await updateDoc(doc(db, "users", auth.currentUser.uid), upd); closeModal('profileEditModal'); };
     document.getElementById('editFile').onchange = (e) => { const r = new FileReader(); r.onload = (ev) => { document.getElementById('editPreview').src = ev.target.result; document.getElementById('editPreview').style.display = 'block'; }; r.readAsDataURL(e.target.files[0]); };
-    window.copyCode = (txt, btn) => { navigator.clipboard.writeText(txt); btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy Code', 1500); };
+    window.copyCode = (txt, btn) => { navigator.clipboard.writeText(txt); btn.textContent = 'コピーしました!'; setTimeout(() => btn.textContent = 'コードをコピー', 1500); };
     window.toggleComments = (id) => { const el = document.getElementById(`comments-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; };
     window.openModal = (id) => document.getElementById(id).style.display = 'flex';
     window.closeModal = (id) => document.getElementById(id).style.display = 'none';
@@ -198,7 +198,7 @@
         const d = u.data(); 
         document.getElementById('viewName').innerText = d.name; 
         document.getElementById('viewAvatar').src = d.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`; 
-        document.getElementById('viewBio').innerText = d.bio || "No bio available."; 
+        document.getElementById('viewBio').innerText = d.bio || "説明がありません"; 
         openModal('userProfileModal'); 
       } 
     };
