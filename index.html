@@ -64,7 +64,6 @@
     .code-input { font-family: monospace; background: #0f172a; color: #38bdf8; }
     .preview-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-top: 10px; border: 2px solid var(--primary); display: none; }
     
-    /* スパム対策用ハニポット（隠し要素） */
     .hp-field { display: none !important; visibility: hidden; }
   </style>
 </head>
@@ -98,10 +97,10 @@
         <input type="hidden" id="editDocId">
         <input type="text" id="hp_user" class="hp-field" tabindex="-1" autocomplete="off">
         
-        <input type="text" id="postTitle" class="form-control" placeholder="タイトル (3文字以上)" required minlength="3" maxlength="50">
+        <input type="text" id="postTitle" class="form-control" placeholder="タイトル" required minlength="3" maxlength="50">
         <input type="text" id="postGame" class="form-control" placeholder="ゲーム名" required maxlength="30">
-        <textarea id="postDesc" class="form-control" placeholder="説明文 (最大200文字)" maxlength="200"></textarea>
-        <textarea id="postContent" class="form-control code-input" rows="8" placeholder="Lua コード (10文字以上)" required minlength="10"></textarea>
+        <textarea id="postDesc" class="form-control" placeholder="説明文" maxlength="200"></textarea>
+        <textarea id="postContent" class="form-control code-input" rows="8" placeholder="Lua コード" required minlength="10"></textarea>
         
         <div style="display:flex; justify-content: flex-end; gap:10px;">
           <button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">キャンセル</button>
@@ -112,7 +111,6 @@
   </div>
 
   <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>プロフィール編集</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="名前" required maxlength="20"><textarea id="editBio" class="form-control" placeholder="自己紹介" rows="3" maxlength="150"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">キャンセル</button><button type="submit" class="btn btn-primary">変更を保存</button></div></form></div></div>
-  
   <div class="modal-overlay" id="userProfileModal"><div class="modal-content" style="text-align:center"><img id="viewAvatar" style="width:120px; height:120px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;"><h2 id="viewName"></h2><p id="viewBio" style="color:var(--text-muted); line-height:1.6;"></p><button class="btn btn-secondary" onclick="closeModal('userProfileModal')">閉じる</button></div></div>
 
   <script type="module">
@@ -120,7 +118,6 @@
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, increment, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // --- ここにあなたのFirebase情報を入れてください ---
     const firebaseConfig = {
       apiKey: "AIzaSyAqy2H40wFYd86zbFmPurvI8SsV1-x8luU",
       authDomain: "flutter-ai-playground-96c40.firebaseapp.com",
@@ -137,10 +134,23 @@
 
     let currentUserData = null;
     let scripts = [];
-    
-    // スパム対策用：最後の投稿時間
     let lastPostTimestamp = 0;
-    const POST_INTERVAL = 30000; // 30秒
+    const POST_INTERVAL = 30000;
+
+    // --- 禁止ワード設定 ---
+    const NG_WORDS = ["死ね", "殺す", "馬鹿", "baka", "ゴミ", "カス"]; // 必要に応じて追加
+
+    /**
+     * テキスト内のNGワードをチェックし、伏せ字にする関数
+     */
+    const filterText = (text) => {
+      let filtered = text;
+      NG_WORDS.forEach(word => {
+        const regex = new RegExp(word, "gi");
+        filtered = filtered.replace(regex, "***");
+      });
+      return filtered;
+    };
 
     const requireAuth = () => { if (!auth.currentUser) { window.location.href = LOGIN_PAGE; return false; } return true; };
 
@@ -208,15 +218,15 @@
       });
     };
 
-    // --- スパム対策込みの投稿・コメント処理 ---
-
     window.handleAddComment = async (id) => {
       const input = document.getElementById(`input-${id}`);
-      const commentText = input.value.trim();
+      let commentText = input.value.trim();
       if (!requireAuth()) return;
       if (commentText.length < 2) return alert("コメントが短すぎます");
 
-      // コメント連投対策 (5秒)
+      // 禁止ワードフィルター適用
+      commentText = filterText(commentText);
+
       const now = Date.now();
       if (now - lastPostTimestamp < 5000) return alert("少し待ってからコメントしてください");
 
@@ -238,28 +248,21 @@
     document.getElementById('postForm').onsubmit = async (e) => {
       e.preventDefault();
       if (!requireAuth()) return;
-
-      // ハニポットチェック（ボットは隠しフィールドに値を入れがち）
       if (document.getElementById('hp_user').value !== "") return;
 
-      // 新規投稿時の連投制限
       const now = Date.now();
       const id = document.getElementById('editDocId').value;
       if (!id && (now - lastPostTimestamp < POST_INTERVAL)) {
-        const wait = Math.ceil((POST_INTERVAL - (now - lastPostTimestamp)) / 1000);
-        return alert(`連投防止のため、あと ${wait} 秒待機してください`);
+        return alert(`あと ${Math.ceil((POST_INTERVAL - (now - lastPostTimestamp)) / 1000)} 秒待機してください`);
       }
 
-      const title = document.getElementById('postTitle').value.trim();
-      const content = document.getElementById('postContent').value.trim();
+      // 入力値の取得とNGワードフィルタリング
+      const title = filterText(document.getElementById('postTitle').value.trim());
+      const game = filterText(document.getElementById('postGame').value.trim());
+      const desc = filterText(document.getElementById('postDesc').value.trim());
+      const content = document.getElementById('postContent').value.trim(); // コード部分は基本除外
 
-      const data = { 
-        title: title, 
-        game: document.getElementById('postGame').value.trim(), 
-        desc: document.getElementById('postDesc').value.trim(), 
-        content: content, 
-        updatedAt: now 
-      };
+      const data = { title, game, desc, content, updatedAt: now };
 
       try {
         const btn = document.getElementById('submitBtn');
@@ -284,74 +287,31 @@
         
         closeModal('postModal');
         e.target.reset();
-        document.getElementById('editDocId').value = "";
       } catch (err) {
         alert("エラーが発生しました");
       } finally {
-        const btn = document.getElementById('submitBtn');
-        btn.disabled = false;
-        btn.innerText = "公開する";
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').innerText = "公開する";
       }
     };
 
-    // --- その他UI機能 ---
-
+    // --- その他UI用 ---
     window.handleLike = async (id, isLiked) => { if(!requireAuth()) return; await updateDoc(doc(db, "scripts", id), { likes: increment(isLiked ? -1 : 1), likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) }); };
-    
     window.handleDelete = async (id) => { if(requireAuth() && confirm("本当に削除しますか？")) await deleteDoc(doc(db, "scripts", id)); };
-    
-    window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; document.getElementById('editPreview').style.display='block'; openModal('profileEditModal'); };
-    
-    document.getElementById('profileEditForm').onsubmit = async (e) => { e.preventDefault(); const upd = { name: document.getElementById('editName').value, bio: document.getElementById('editBio').value, avatar: document.getElementById('editPreview').src }; await updateDoc(doc(db, "users", auth.currentUser.uid), upd); closeModal('profileEditModal'); };
-    
+    window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; openModal('profileEditModal'); };
+    document.getElementById('profileEditForm').onsubmit = async (e) => { e.preventDefault(); const upd = { name: filterText(document.getElementById('editName').value), bio: filterText(document.getElementById('editBio').value), avatar: document.getElementById('editPreview').src }; await updateDoc(doc(db, "users", auth.currentUser.uid), upd); closeModal('profileEditModal'); };
     document.getElementById('editFile').onchange = (e) => { const r = new FileReader(); r.onload = (ev) => { document.getElementById('editPreview').src = ev.target.result; document.getElementById('editPreview').style.display = 'block'; }; r.readAsDataURL(e.target.files[0]); };
-    
-    window.copyCode = (txt, btn) => {
-      navigator.clipboard.writeText(txt).then(() => {
-        const oldText = btn.textContent;
-        btn.textContent = 'コピー完了！';
-        setTimeout(() => btn.textContent = oldText, 1500);
-      });
-    };
-
+    window.copyCode = (txt, btn) => { navigator.clipboard.writeText(txt).then(() => { const old = btn.textContent; btn.textContent = 'コピー完了！'; setTimeout(() => btn.textContent = old, 1500); }); };
     window.toggleComments = (id) => { const el = document.getElementById(`comments-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; };
     window.openModal = (id) => { document.getElementById(id).style.display = 'flex'; };
     window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
     window.toggleDropdown = () => { const d = document.getElementById('userDropdown'); d.style.display = d.style.display === 'flex' ? 'none' : 'flex'; };
     window.toggleCardMenu = (id) => { const m = document.getElementById(`menu-${id}`); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
-    
-    window.openEditModal = (id) => { 
-      const s = scripts.find(x => x.id === id); 
-      document.getElementById('editDocId').value = id; 
-      document.getElementById('postTitle').value = s.title; 
-      document.getElementById('postGame').value = s.game; 
-      document.getElementById('postDesc').value = s.desc; 
-      document.getElementById('postContent').value = s.content; 
-      document.getElementById('modalTitle').innerText = "スクリプトを編集"; 
-      openModal('postModal'); 
-    };
-    
-    window.showUser = async (uid) => { 
-      const u = await getDoc(doc(db, "users", uid)); 
-      if(u.exists()){ 
-        const d = u.data(); 
-        document.getElementById('viewName').innerText = d.name; 
-        document.getElementById('viewAvatar').src = d.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`; 
-        document.getElementById('viewBio').innerText = d.bio || "自己紹介はありません。"; 
-        openModal('userProfileModal'); 
-      } 
-    };
-
-    document.getElementById('postBtnMain').onclick = () => {
-        if(requireAuth()) {
-            document.getElementById('editDocId').value = "";
-            document.getElementById('modalTitle').innerText = "スクリプトを投稿";
-            document.getElementById('postForm').reset();
-            openModal('postModal');
-        }
-    };
+    window.openEditModal = (id) => { const s = scripts.find(x => x.id === id); document.getElementById('editDocId').value = id; document.getElementById('postTitle').value = s.title; document.getElementById('postGame').value = s.game; document.getElementById('postDesc').value = s.desc; document.getElementById('postContent').value = s.content; openModal('postModal'); };
+    window.showUser = async (uid) => { const u = await getDoc(doc(db, "users", uid)); if(u.exists()){ const d = u.data(); document.getElementById('viewName').innerText = d.name; document.getElementById('viewAvatar').src = d.avatar; document.getElementById('viewBio').innerText = d.bio || "自己紹介なし"; openModal('userProfileModal'); } };
+    document.getElementById('postBtnMain').onclick = () => { if(requireAuth()){ document.getElementById('editDocId').value = ""; document.getElementById('postForm').reset(); openModal('postModal'); } };
     document.getElementById('searchInput').oninput = render;
-    window.onclick = (e) => { if(e.target.className === 'modal-overlay') { e.target.style.display = 'none'; } if(!e.target.closest('.card-menu-btn')) document.querySelectorAll('.card-menu').forEach(m => m.style.display='none'); if(!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none'; };
+    window.onclick = (e) => { if(e.target.className === 'modal-overlay') e.target.style.display = 'none'; if(!e.target.closest('.card-menu-btn')) document.querySelectorAll('.card-menu').forEach(m => m.style.display='none'); if(!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none'; };
   </script>
 </body>
 </html>
