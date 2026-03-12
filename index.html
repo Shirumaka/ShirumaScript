@@ -164,10 +164,18 @@
           </div>
           <div class="card-footer">
             <div class="author-info" onclick="showUser('${s.authorUid}')"><img src="${s.authorAvatar}" class="author-avatar"><span>${s.authorName}</span></div>
-            <button class="btn btn-primary" style="font-size:0.7rem; padding:5px 10px;" onclick="copyCode('${s.content.replace(/'/g, "\\'")}', this)">コードをコピー</button>
+            <button class="btn btn-primary btn-copy" style="font-size:0.7rem; padding:5px 10px;" data-id="${s.id}">コードをコピー</button>
           </div>
         `;
         grid.appendChild(card);
+      });
+      
+      document.querySelectorAll('.btn-copy').forEach(btn => {
+        btn.onclick = () => {
+          const scriptId = btn.getAttribute('data-id');
+          const script = scripts.find(x => x.id === scriptId);
+          if (script) copyCode(script.content, btn);
+        };
       });
     };
 
@@ -184,7 +192,22 @@
     window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; document.getElementById('editPreview').style.display='block'; openModal('profileEditModal'); };
     document.getElementById('profileEditForm').onsubmit = async (e) => { e.preventDefault(); const upd = { name: document.getElementById('editName').value, bio: document.getElementById('editBio').value, avatar: document.getElementById('editPreview').src }; await updateDoc(doc(db, "users", auth.currentUser.uid), upd); closeModal('profileEditModal'); };
     document.getElementById('editFile').onchange = (e) => { const r = new FileReader(); r.onload = (ev) => { document.getElementById('editPreview').src = ev.target.result; document.getElementById('editPreview').style.display = 'block'; }; r.readAsDataURL(e.target.files[0]); };
-    window.copyCode = (txt, btn) => { navigator.clipboard.writeText(txt); btn.textContent = 'コピー完了！'; setTimeout(() => btn.textContent = 'コードをコピー', 1500); };
+    
+    window.copyCode = (txt, btn) => {
+      if (!navigator.clipboard) {
+        const textArea = document.createElement("textarea");
+        textArea.value = txt;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      } else {
+        navigator.clipboard.writeText(txt);
+      }
+      btn.textContent = 'コピー完了！';
+      setTimeout(() => btn.textContent = 'コードをコピー', 1500);
+    };
+
     window.toggleComments = (id) => { const el = document.getElementById(`comments-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; };
     window.openModal = (id) => document.getElementById(id).style.display = 'flex';
     window.closeModal = (id) => document.getElementById(id).style.display = 'none';
