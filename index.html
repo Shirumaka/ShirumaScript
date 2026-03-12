@@ -160,11 +160,11 @@
                 <img src="${c.a || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'}" class="comment-avatar" onclick="showUser('${c.uid}')">
                 <div class="comment-content"><strong>${c.u}:</strong> ${c.t}</div>
               </div>`).join('')}</div>
-            <div style="display:flex; gap:5px;"><input type="text" id="input-${s.id}" class="form-control" style="margin:0; padding:5px; font-size:0.8rem;" placeholder="Add comment..."><button class="btn btn-primary" style="padding:4px 8px;" onclick="handleAddComment('${s.id}')">Post</button></div>
+            <div style="display:flex; gap:5px;"><input type="text" id="input-${s.id}" class="form-control" style="margin:0; padding:5px; font-size:0.8rem;" placeholder="コメントを追加..."><button class="btn btn-primary" style="padding:4px 8px;" onclick="handleAddComment('${s.id}')">投稿</button></div>
           </div>
           <div class="card-footer">
             <div class="author-info" onclick="showUser('${s.authorUid}')"><img src="${s.authorAvatar}" class="author-avatar"><span>${s.authorName}</span></div>
-            <button class="btn btn-primary" style="font-size:0.7rem; padding:5px 10px;" onclick="copyCode('${s.content.replace(/'/g, "\\'")}', this)">Copy Code</button>
+            <button class="btn btn-primary" style="font-size:0.7rem; padding:5px 10px;" onclick="copyCode('${s.content.replace(/'/g, "\\'")}', this)">コードをコピー</button>
           </div>
         `;
         grid.appendChild(card);
