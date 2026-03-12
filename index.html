@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShirumaScripts - Cloud Hub</title>
+  <style>
+    :root {
+      --primary: #6366f1; --primary-hover: #4f46e5;
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --card-bg: rgba(30, 41, 59, 0.7); --input-bg: rgba(15, 23, 42, 0.6);
+      --text: #f8fafc; --text-muted: #94a3b8; --border: rgba(255, 255, 255, 0.1);
+      --success: #22c55e; --heart: #f43f5e;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg-gradient); margin: 0; color: var(--text); min-height: 100vh; overflow-x: hidden; }
+    .bg-blur { position: fixed; width: 60vw; height: 60vw; background: var(--primary); filter: blur(150px); border-radius: 50%; z-index: -1; opacity: 0.1; top: -10%; left: -10%; }
+    
+    header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 5%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .logo { font-size: 1.5rem; font-weight: 800; color: #fff; text-decoration: none; }
+    .logo span { color: var(--primary); }
+
+    .nav-actions { display: flex; align-items: center; gap: 1.2rem; }
+    .btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; font-size: 0.9rem; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: #334155; color: white; }
+
+    .user-menu-container { position: relative; }
+    .avatar-btn { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--primary); cursor: pointer; object-fit: cover; background: #334155; }
+    .dropdown-menu { position: absolute; top: 55px; right: 0; background: #1e293b; border: 1px solid var(--border); border-radius: 12px; width: 220px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+    .dropdown-item { padding: 12px 16px; font-size: 0.9rem; cursor: pointer; border: none; background: none; color: white; text-align: left; }
+    .dropdown-item:hover { background: rgba(255,255,255,0.05); color: var(--primary); }
+
+    main { padding: 2rem 5%; max-width: 1200px; margin: 0 auto; }
+    .hero { text-align: center; margin-bottom: 3rem; }
+    .hero h1 { font-size: 3rem; margin: 0; letter-spacing: -2px; }
+    .hero h1 span { color: var(--primary); }
+
+    .search-container { position: relative; max-width: 500px; margin: 2rem auto; }
+    .search-input { width: 100%; padding: 1.2rem 3.5rem; background: var(--input-bg); border: 1px solid var(--border); border-radius: 3rem; color: #fff; box-sizing: border-box; }
+    .search-icon { position: absolute; left: 1.5rem; top: 50%; transform: translateY(-50%); opacity: 0.5; }
+
+    .script-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px; }
+    .script-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; transition: 0.3s; }
+    .card-header h3 { margin: 0; font-size: 1.3rem; }
+    .game-tag { color: var(--primary); font-size: 0.85rem; font-weight: 700; margin-top: 5px; display: block; }
+    .script-desc { color: var(--text-muted); font-size: 0.95rem; margin: 15px 0; }
+
+    .card-stats { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+    .like-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 1rem; }
+    .like-btn.active { color: var(--heart); }
+
+    .comment-section { display: none; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; }
+    .comment-list { max-height: 100px; overflow-y: auto; font-size: 0.8rem; margin-bottom: 10px; }
+    .comment-item { margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px; }
+    .comment-input-group { display: flex; gap: 5px; }
+    .comment-input { flex-grow: 1; background: var(--input-bg); border: 1px solid var(--border); border-radius: 4px; color: white; padding: 5px; font-size: 0.8rem; }
+
+    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px; margin-top: auto; }
+    .author-info { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; }
+    .author-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: #1e293b; padding: 2rem; border-radius: 20px; width: 95%; max-width: 500px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
+    .form-control { width: 100%; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: white; box-sizing: border-box; }
+    .code-input { font-family: monospace; background: #0f172a; color: #38bdf8; }
+  </style>
+</head>
+<body>
+  <div class="bg-blur"></div>
+
+  <header>
+    <a href="#" class="logo">Shiruma<span>Scripts</span></a>
+    <div class="nav-actions">
+      <button class="btn btn-primary" id="postBtnMain">Post Script</button>
+      <div class="user-menu-container">
+        <img id="headerAvatar" class="avatar-btn" src="" onclick="toggleDropdown()">
+        <div class="dropdown-menu" id="userDropdown"></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Find your next <span>Script</span>.</h1>
+      <p>Cloud Synchronized Script Hub</p>
+    </section>
+
+    <div class="search-container">
+      <span class="search-icon">🔍</span>
+      <input type="search" id="searchInput" class="search-input" placeholder="Search scripts...">
+    </div>
+
+    <div class="script-grid" id="scriptGrid"></div>
+  </main>
+
+  <div class="modal-overlay" id="postModal">
+    <div class="modal-content">
+      <h2>Post Script</h2>
+      <form id="postForm">
+        <div class="form-group"><label>Title</label><input type="text" id="postTitle" class="form-control" required></div>
+        <div class="form-group"><label>Game</label><input type="text" id="postGame" class="form-control" required></div>
+        <div class="form-group"><label>Description</label><textarea id="postDesc" class="form-control" rows="2"></textarea></div>
+        <div class="form-group"><label>Code (Lua)</label><textarea id="postContent" class="form-control code-input" rows="5" required></textarea></div>
+        <div style="display:flex; justify-content: flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Publish</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="userProfileModal">
+    <div class="modal-content" style="text-align:center">
+      <img id="viewAvatar" style="width:100px; height:100px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem;">
+      <h2 id="viewName"></h2>
+      <p id="viewBio" style="color:var(--text-muted)"></p>
+      <button class="btn btn-secondary" onclick="closeModal('userProfileModal')">Close</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAqy2H40wFYd86zbFmPurvI8SsV1-x8luU",
+      authDomain: "flutter-ai-playground-96c40.firebaseapp.com",
+      projectId: "flutter-ai-playground-96c40",
+      storageBucket: "flutter-ai-playground-96c40.firebasestorage.app",
+      messagingSenderId: "1063688315774",
+      appId: "1:1063688315774:web:1e5d77f259203c56b4c92f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let scripts = [];
+
+    // --- 認証監視 ---
+    onAuthStateChanged(auth, (user) => {
+      const avatarImg = document.getElementById('headerAvatar');
+      const menu = document.getElementById('userDropdown');
+      
+      if (user) {
+        currentUser = { uid: user.uid, name: user.displayName || "Anonymous", avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` };
+        avatarImg.src = currentUser.avatar;
+        menu.innerHTML = `<div style="padding:10px; font-size:0.8rem; border-bottom:1px solid var(--border)">${currentUser.name}</div><button class="dropdown-item" id="logoutBtn">Log Out</button>`;
+        document.getElementById('logoutBtn').onclick = () => signOut(auth);
+      } else {
+        currentUser = null;
+        avatarImg.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
+        menu.innerHTML = `<button class="dropdown-item" onclick="alert('ログイン画面からログインしてください')">Login Required</button>`;
+      }
+    });
+
+    // --- Firestoreからリアルタイム取得 ---
+    const q = query(collection(db, "scripts"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+      scripts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      render();
+    });
+
+    // --- 描画関数 ---
+    window.render = () => {
+      const grid = document.getElementById('scriptGrid');
+      const term = document.getElementById('searchInput').value.toLowerCase();
+      grid.innerHTML = '';
+
+      scripts.filter(s => s.title.toLowerCase().includes(term)).forEach(s => {
+        const isLiked = currentUser && s.likedBy && s.likedBy.includes(currentUser.uid);
+        const card = document.createElement('div');
+        card.className = 'script-card';
+        card.innerHTML = `
+          <div class="card-header"><h3>${s.title}</h3><span class="game-tag">${s.game}</span></div>
+          <p class="script-desc">${s.desc}</p>
+          <div class="card-stats">
+            <button class="like-btn ${isLiked ? 'active' : ''}" onclick="handleLike('${s.id}', ${isLiked})">${isLiked ? '❤️' : '🤍'} ${s.likes || 0}</button>
+            <button class="btn" style="background:none; color:var(--primary); font-size:0.8rem;" onclick="toggleComments('${s.id}')">💬 ${s.comments?.length || 0} Comments</button>
+          </div>
+          <div class="comment-section" id="comments-${s.id}">
+            <div class="comment-list">${(s.comments || []).map(c => `<div class="comment-item"><strong>${c.u}:</strong> ${c.t}</div>`).join('')}</div>
+            <div class="comment-input-group">
+              <input type="text" class="comment-input" id="input-${s.id}" placeholder="Write a comment...">
+              <button class="btn btn-primary" style="padding:2px 8px" onclick="handleAddComment('${s.id}')">Post</button>
+            </div>
+          </div>
+          <div class="card-footer">
+            <div class="author-info" onclick="showUser('${s.authorName}', '${s.authorAvatar}')">
+              <img src="${s.authorAvatar}" class="author-avatar"><span>${s.authorName}</span>
+            </div>
+            <button class="btn btn-primary" style="font-size:0.7rem; padding:5px 10px;" onclick="copyCode('${s.content.replace(/'/g, "\\'")}', this)">Copy Code</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    };
+
+    // --- アクション関数 ---
+    window.handleLike = async (id, isLiked) => {
+      if (!currentUser) return alert("Login required");
+      const docRef = doc(db, "scripts", id);
+      await updateDoc(docRef, {
+        likes: increment(isLiked ? -1 : 1),
+        likedBy: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+      });
+    };
+
+    window.handleAddComment = async (id) => {
+      const input = document.getElementById(`input-${id}`);
+      if (!currentUser || !input.value.trim()) return;
+      const docRef = doc(db, "scripts", id);
+      await updateDoc(docRef, {
+        comments: arrayUnion({ u: currentUser.name, t: input.value, uid: currentUser.uid })
+      });
+      input.value = '';
+    };
+
+    document.getElementById('postForm').onsubmit = async (e) => {
+      e.preventDefault();
+      if (!currentUser) return alert("Login required");
+      await addDoc(collection(db, "scripts"), {
+        title: document.getElementById('postTitle').value,
+        game: document.getElementById('postGame').value,
+        desc: document.getElementById('postDesc').value,
+        content: document.getElementById('postContent').value,
+        authorName: currentUser.name,
+        authorAvatar: currentUser.avatar,
+        authorUid: currentUser.uid,
+        likes: 0, likedBy: [], comments: [],
+        createdAt: Date.now()
+      });
+      closeModal('postModal');
+      e.target.reset();
+    };
+
+    // --- ユーティリティ ---
+    window.copyCode = (txt, btn) => { navigator.clipboard.writeText(txt); btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy Code', 1500); };
+    window.toggleComments = (id) => { const el = document.getElementById(`comments-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; };
+    window.openModal = (id) => document.getElementById(id).style.display = 'flex';
+    window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+    window.toggleDropdown = () => { const d = document.getElementById('userDropdown'); d.style.display = d.style.display === 'flex' ? 'none' : 'flex'; };
+    window.showUser = (name, avatar) => { document.getElementById('viewName').innerText = name; document.getElementById('viewAvatar').src = avatar; openModal('userProfileModal'); };
+    
+    document.getElementById('postBtnMain').onclick = () => currentUser ? openModal('postModal') : alert("Login required");
+    document.getElementById('searchInput').oninput = render;
+
+    window.onclick = (e) => { 
+      if(e.target.className === 'modal-overlay') e.target.style.display = 'none'; 
+      if(!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none';
+    };
+  </script>
+</body>
+</html>
