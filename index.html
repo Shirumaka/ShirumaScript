@@ -198,7 +198,7 @@
     });
 
     onSnapshot(query(collection(db, "scripts"), orderBy("createdAt", "desc")), (snapshot) => {
-      scripts = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      scripts = snapshot.docs.map(snap => ({ id: snap.id, ...snap.data() }));
       render();
     });
 
