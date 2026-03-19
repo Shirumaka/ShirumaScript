@@ -110,30 +110,8 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="profileEditModal">
-    <div class="modal-content">
-      <h2>プロフィール編集</h2>
-      <form id="profileEditForm">
-        <input type="text" id="editName" class="form-control" placeholder="名前" required maxlength="20">
-        <textarea id="editBio" class="form-control" placeholder="自己紹介" rows="3" maxlength="150"></textarea>
-        <input type="file" id="editFile" class="form-control" accept="image/*">
-        <img id="editPreview" class="preview-img">
-        <div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">キャンセル</button>
-          <button type="submit" class="btn btn-primary" id="profileSaveBtn">変更を保存</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="userProfileModal">
-    <div class="modal-content" style="text-align:center">
-      <img id="viewAvatar" style="width:120px; height:120px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;">
-      <h2 id="viewName"></h2>
-      <p id="viewBio" style="color:var(--text-muted); line-height:1.6;"></p>
-      <button class="btn btn-secondary" onclick="closeModal('userProfileModal')">閉じる</button>
-    </div>
-  </div>
+  <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>プロフィール編集</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="名前" required maxlength="20"><textarea id="editBio" class="form-control" placeholder="自己紹介" rows="3" maxlength="150"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">キャンセル</button><button type="submit" class="btn btn-primary">変更を保存</button></div></form></div></div>
+  <div class="modal-overlay" id="userProfileModal"><div class="modal-content" style="text-align:center"><img id="viewAvatar" style="width:120px; height:120px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;"><h2 id="viewName"></h2><p id="viewBio" style="color:var(--text-muted); line-height:1.6;"></p><button class="btn btn-secondary" onclick="closeModal('userProfileModal')">閉じる</button></div></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -160,7 +138,6 @@
     const POST_INTERVAL = 30000;
 
     const NG_WORDS = ["死ね", "殺す", "馬鹿", "baka", "ゴミ", "カス", "しね", "ころす", "ばか", "バカ", "ごみ", "かす", "だまれ", "黙れ", "地獄に落ちろ", "セックス", "せっくす", "ぜっぐず", "まんこ", "マンコ", "ちんこ", "チンコ", "チンポ", "ちんぽ", "なかだし", "なかたし", "しゃせい", "中出し", "射精", "シャセイ", "あほ", "アホ", "あぽ", "アポ", "股", "マタ", "1919", "4545", "しこしこ", "シコシコ", "イク", "イクイク", "いくいく", "一緒に赤ちゃん作ろう", "黒人", "きも", "キモ", "🌲も", "🌲モ", "🌳も", "🌳モ", "勃起", "ぼっき", "ボッキ", "おっぱい", "オッパイ", "消えろ", "きえろ", "キエロ", "付き合って", "つきあって", "ツキアッテ", "結婚", "ヤろう", "ヤるね", "ヤってあげる", "いぐ", "イグ", "ちんちん", "チンチン", "珍個", "満個", "いっぱいでたね", "イッパイデタネ"];
-    
     const filterText = (text) => {
       let filtered = text;
       NG_WORDS.forEach(word => {
@@ -170,35 +147,26 @@
       return filtered;
     };
 
-    const requireAuth = () => {
-      if (!auth.currentUser) { window.location.href = LOGIN_PAGE; return false; }
-      return true;
-    };
+    const requireAuth = () => { if (!auth.currentUser) { window.location.href = LOGIN_PAGE; return false; } return true; };
 
     onAuthStateChanged(auth, async (user) => {
       const avatarImg = document.getElementById('headerAvatar');
       const menu = document.getElementById('userDropdown');
       if (user) {
         const uDoc = await getDoc(doc(db, "users", user.uid));
-        currentUserData = uDoc.exists()
-          ? uDoc.data()
-          : { uid: user.uid, name: user.displayName || "ユーザー", bio: "", avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` };
+        currentUserData = uDoc.exists() ? uDoc.data() : { uid: user.uid, name: user.displayName || "ユーザー", bio: "", avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` };
         avatarImg.src = currentUserData.avatar;
-        menu.innerHTML = `
-          <div style="padding:12px; border-bottom:1px solid var(--border)"><strong>${currentUserData.name}</strong></div>
-          <button class="dropdown-item" onclick="openProfileEdit()">⚙️ プロフィール編集</button>
-          <button class="dropdown-item" id="logoutBtn" style="color:var(--danger)">🚪 ログアウト</button>`;
+        menu.innerHTML = `<div style="padding:12px; border-bottom:1px solid var(--border)"><strong>${currentUserData.name}</strong></div><button class="dropdown-item" onclick="openProfileEdit()">⚙️ プロフィール編集</button><button class="dropdown-item" id="logoutBtn" style="color:var(--danger)">🚪 ログアウト</button>`;
         document.getElementById('logoutBtn').onclick = () => signOut(auth);
       } else {
-        currentUserData = null;
-        avatarImg.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
+        currentUserData = null; avatarImg.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
         menu.innerHTML = `<button class="dropdown-item" onclick="window.location.href='${LOGIN_PAGE}'">🔑 ログイン / 新規登録</button>`;
       }
       render();
     });
 
     onSnapshot(query(collection(db, "scripts"), orderBy("createdAt", "desc")), (snapshot) => {
-      scripts = snapshot.docs.map(snap => ({ id: snap.id, ...snap.data() }));
+      scripts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       render();
     });
 
@@ -320,117 +288,22 @@
       }
     };
 
-    window.handleLike = async (id, isLiked) => {
-      if (!requireAuth()) return;
-      await updateDoc(doc(db, "scripts", id), {
-        likes: increment(isLiked ? -1 : 1),
-        likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid)
-      });
-    };
-
-    window.handleDelete = async (id) => {
-      if (requireAuth() && confirm("本当に削除しますか？")) await deleteDoc(doc(db, "scripts", id));
-    };
-
-    window.openProfileEdit = () => {
-      if (!requireAuth()) return;
-      document.getElementById('editName').value = currentUserData.name;
-      document.getElementById('editBio').value = currentUserData.bio || "";
-      document.getElementById('editPreview').src = currentUserData.avatar;
-      document.getElementById('editPreview').style.display = 'block';
-      openModal('profileEditModal');
-    };
-
-    // ── バグ修正：プロフィール保存後にローカルデータ・UIを即時更新 ──
-    document.getElementById('profileEditForm').onsubmit = async (e) => {
-      e.preventDefault();
-      const saveBtn = document.getElementById('profileSaveBtn');
-      const upd = {
-        name: filterText(document.getElementById('editName').value.trim()),
-        bio: filterText(document.getElementById('editBio').value.trim()),
-        avatar: document.getElementById('editPreview').src
-      };
-      try {
-        saveBtn.disabled = true;
-        saveBtn.innerText = "保存中...";
-        await updateDoc(doc(db, "users", auth.currentUser.uid), upd);
-        // ローカルのデータを更新
-        currentUserData = { ...currentUserData, ...upd };
-        // ヘッダーアバターを即時反映
-        document.getElementById('headerAvatar').src = upd.avatar;
-        closeModal('profileEditModal');
-      } catch (err) {
-        alert("保存に失敗しました: " + err.message);
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.innerText = "変更を保存";
-      }
-    };
-
-    document.getElementById('editFile').onchange = (e) => {
-      if (!e.target.files[0]) return; // ファイルが未選択の場合は何もしない
-      const r = new FileReader();
-      r.onload = (ev) => {
-        document.getElementById('editPreview').src = ev.target.result;
-        document.getElementById('editPreview').style.display = 'block';
-      };
-      r.readAsDataURL(e.target.files[0]);
-    };
-
-    window.copyCode = (txt, btn) => {
-      navigator.clipboard.writeText(txt).then(() => {
-        const old = btn.textContent;
-        btn.textContent = 'コピー完了！';
-        setTimeout(() => btn.textContent = old, 1500);
-      }).catch(() => alert("コピーに失敗しました"));
-    };
-
-    window.toggleComments = (id) => {
-      const el = document.getElementById(`comments-${id}`);
-      el.style.display = el.style.display === 'block' ? 'none' : 'block';
-    };
+    window.handleLike = async (id, isLiked) => { if(!requireAuth()) return; await updateDoc(doc(db, "scripts", id), { likes: increment(isLiked ? -1 : 1), likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) }); };
+    window.handleDelete = async (id) => { if(requireAuth() && confirm("本当に削除しますか？")) await deleteDoc(doc(db, "scripts", id)); };
+    window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; openModal('profileEditModal'); };
+    document.getElementById('profileEditForm').onsubmit = async (e) => { e.preventDefault(); const upd = { name: filterText(document.getElementById('editName').value), bio: filterText(document.getElementById('editBio').value), avatar: document.getElementById('editPreview').src }; await updateDoc(doc(db, "users", auth.currentUser.uid), upd); closeModal('profileEditModal'); };
+    document.getElementById('editFile').onchange = (e) => { const r = new FileReader(); r.onload = (ev) => { document.getElementById('editPreview').src = ev.target.result; document.getElementById('editPreview').style.display = 'block'; }; r.readAsDataURL(e.target.files[0]); };
+    window.copyCode = (txt, btn) => { navigator.clipboard.writeText(txt).then(() => { const old = btn.textContent; btn.textContent = 'コピー完了！'; setTimeout(() => btn.textContent = old, 1500); }); };
+    window.toggleComments = (id) => { const el = document.getElementById(`comments-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; };
     window.openModal = (id) => { document.getElementById(id).style.display = 'flex'; };
     window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
-    window.toggleDropdown = () => {
-      const d = document.getElementById('userDropdown');
-      d.style.display = d.style.display === 'flex' ? 'none' : 'flex';
-    };
-    window.toggleCardMenu = (id) => {
-      const m = document.getElementById(`menu-${id}`);
-      m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
-    };
-    window.openEditModal = (id) => {
-      const s = scripts.find(x => x.id === id);
-      document.getElementById('editDocId').value = id;
-      document.getElementById('postTitle').value = s.title;
-      document.getElementById('postGame').value = s.game;
-      document.getElementById('postDesc').value = s.desc;
-      document.getElementById('postContent').value = s.content;
-      openModal('postModal');
-    };
-    window.showUser = async (uid) => {
-      const u = await getDoc(doc(db, "users", uid));
-      if (u.exists()) {
-        const d = u.data();
-        document.getElementById('viewName').innerText = d.name;
-        document.getElementById('viewAvatar').src = d.avatar;
-        document.getElementById('viewBio').innerText = d.bio || "自己紹介なし";
-        openModal('userProfileModal');
-      }
-    };
-    document.getElementById('postBtnMain').onclick = () => {
-      if (requireAuth()) {
-        document.getElementById('editDocId').value = "";
-        document.getElementById('postForm').reset();
-        openModal('postModal');
-      }
-    };
+    window.toggleDropdown = () => { const d = document.getElementById('userDropdown'); d.style.display = d.style.display === 'flex' ? 'none' : 'flex'; };
+    window.toggleCardMenu = (id) => { const m = document.getElementById(`menu-${id}`); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
+    window.openEditModal = (id) => { const s = scripts.find(x => x.id === id); document.getElementById('editDocId').value = id; document.getElementById('postTitle').value = s.title; document.getElementById('postGame').value = s.game; document.getElementById('postDesc').value = s.desc; document.getElementById('postContent').value = s.content; openModal('postModal'); };
+    window.showUser = async (uid) => { const u = await getDoc(doc(db, "users", uid)); if(u.exists()){ const d = u.data(); document.getElementById('viewName').innerText = d.name; document.getElementById('viewAvatar').src = d.avatar; document.getElementById('viewBio').innerText = d.bio || "自己紹介なし"; openModal('userProfileModal'); } };
+    document.getElementById('postBtnMain').onclick = () => { if(requireAuth()){ document.getElementById('editDocId').value = ""; document.getElementById('postForm').reset(); openModal('postModal'); } };
     document.getElementById('searchInput').oninput = render;
-    window.onclick = (e) => {
-      if (e.target.className === 'modal-overlay') e.target.style.display = 'none';
-      if (!e.target.closest('.card-menu-btn')) document.querySelectorAll('.card-menu').forEach(m => m.style.display = 'none');
-      if (!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none';
-    };
+    window.onclick = (e) => { if(e.target.className === 'modal-overlay') e.target.style.display = 'none'; if(!e.target.closest('.card-menu-btn')) document.querySelectorAll('.card-menu').forEach(m => m.style.display='none'); if(!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none'; };
   </script>
 </body>
 </html>
