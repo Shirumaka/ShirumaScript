@@ -20,7 +20,6 @@
     .nav-actions { display: flex; align-items: center; gap: 1.2rem; }
     .btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; font-size: 0.9rem; }
     .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:disabled { background: #475569; cursor: not-allowed; }
     .btn-secondary { background: #334155; color: white; }
     .user-menu-container { position: relative; }
     .avatar-btn { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--primary); cursor: pointer; object-fit: cover; background: #334155; }
@@ -76,48 +75,9 @@
     <div class="script-grid" id="scriptGrid"></div>
   </main>
 
-  <div class="modal-overlay" id="postModal">
-    <div class="modal-content">
-      <h2 id="modalTitle">スクリプトを投稿</h2>
-      <form id="postForm">
-        <input type="hidden" id="editDocId">
-        <input type="text" id="hp_user" class="hp-field" tabindex="-1" autocomplete="off">
-        <input type="text" id="postTitle" class="form-control" placeholder="タイトル" required minlength="3" maxlength="50">
-        <input type="text" id="postGame" class="form-control" placeholder="ゲーム名" required maxlength="30">
-        <textarea id="postDesc" class="form-control" placeholder="説明文" maxlength="200"></textarea>
-        <textarea id="postContent" class="form-control code-input" rows="8" placeholder="Lua コード" required minlength="10"></textarea>
-        <div style="display:flex; justify-content: flex-end; gap:10px;">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">キャンセル</button>
-          <button type="submit" class="btn btn-primary" id="submitBtn">公開する</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="profileEditModal">
-    <div class="modal-content">
-      <h2>プロフィール編集</h2>
-      <form id="profileEditForm">
-        <input type="text" id="editName" class="form-control" placeholder="名前" required maxlength="20">
-        <textarea id="editBio" class="form-control" placeholder="自己紹介" rows="3" maxlength="150"></textarea>
-        <input type="file" id="editFile" class="form-control" accept="image/*">
-        <img id="editPreview" class="preview-img">
-        <div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">キャンセル</button>
-          <button type="submit" class="btn btn-primary">変更を保存</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="userProfileModal">
-    <div class="modal-content" style="text-align:center">
-      <img id="viewAvatar" style="width:120px; height:120px; border-radius:50%; border:3px solid var(--primary); margin-bottom:1rem; object-fit:cover;">
-      <h2 id="viewName"></h2>
-      <p id="viewBio" style="color:var(--text-muted); line-height:1.6;"></p>
-      <button class="btn btn-secondary" onclick="closeModal('userProfileModal')">閉じる</button>
-    </div>
-  </div>
+  <div class="modal-overlay" id="postModal"><div class="modal-content"><h2>投稿</h2><form id="postForm"><input type="hidden" id="editDocId"><input type="text" id="postTitle" class="form-control" placeholder="タイトル" required><input type="text" id="postGame" class="form-control" placeholder="ゲーム名" required><textarea id="postDesc" class="form-control" placeholder="説明文"></textarea><textarea id="postContent" class="form-control code-input" rows="8" placeholder="Lua コード" required></textarea><div style="display:flex; justify-content: flex-end; gap:10px;"><button type="button" class="btn btn-secondary" onclick="closeModal('postModal')">キャンセル</button><button type="submit" class="btn btn-primary">公開</button></div></form></div></div>
+  <div class="modal-overlay" id="profileEditModal"><div class="modal-content"><h2>プロフィール編集</h2><form id="profileEditForm"><input type="text" id="editName" class="form-control" placeholder="名前" required maxlength="20"><textarea id="editBio" class="form-control" placeholder="自己紹介" rows="3" maxlength="150"></textarea><input type="file" id="editFile" class="form-control" accept="image/*"><img id="editPreview" class="preview-img"><div style="display:flex; justify-content: flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-secondary" onclick="closeModal('profileEditModal')">キャンセル</button><button type="submit" class="btn btn-primary">保存</button></div></form></div></div>
+  <div class="modal-overlay" id="userProfileModal"><div class="modal-content" style="text-align:center"><img id="viewAvatar" style="width:120px; height:120px; border-radius:50%; object-fit:cover;"><h2 id="viewName"></h2><p id="viewBio"></p><button class="btn btn-secondary" onclick="closeModal('userProfileModal')">閉じる</button></div></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -141,197 +101,161 @@
 
     let currentUserData = null;
     let scripts = [];
+    let userCache = {};
 
-    const NG_WORDS = ["死ね", "殺す", "馬鹿", "baka", "ゴミ", "カス"];
     const filterText = (text) => {
+      const NG = ["死ね", "殺す", "馬鹿", "baka", "ゴミ", "カス"];
       if (!text) return "";
-      let filtered = text;
-      NG_WORDS.forEach(word => {
-        const regex = new RegExp(word, "gi");
-        filtered = filtered.replace(regex, "***");
-      });
-      return filtered;
+      let f = text;
+      NG.forEach(w => { f = f.replace(new RegExp(w, "gi"), "***"); });
+      return f;
     };
 
-    // ログイン必須チェック（未ログインなら飛ばす）
-    const requireAuth = () => { 
-      if (!auth.currentUser) { 
-        window.location.href = LOGIN_PAGE; 
-        return false; 
-      } 
-      return true; 
+    const getUserInfo = async (uid) => {
+      if (userCache[uid]) return userCache[uid];
+      const uDoc = await getDoc(doc(db, "users", uid));
+      if (uDoc.exists()) {
+        userCache[uid] = uDoc.data();
+        return userCache[uid];
+      }
+      return { name: "不明", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest" };
     };
 
-    // ログイン状態の管理（ログイン時のみDBへアクセス）
     onAuthStateChanged(auth, async (user) => {
       const avatarImg = document.getElementById('headerAvatar');
       const menu = document.getElementById('userDropdown');
-      
       if (user) {
-        try {
-          const userRef = doc(db, "users", user.uid);
-          const uDoc = await getDoc(userRef);
-          
-          if (uDoc.exists()) {
-            currentUserData = uDoc.data();
-          } else {
-            // 初回のみDB作成
-            currentUserData = { 
-              uid: user.uid, 
-              name: user.displayName || "ユーザー", 
-              bio: "", 
-              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` 
-            };
-            await setDoc(userRef, currentUserData);
-          }
-          avatarImg.src = currentUserData.avatar;
-          menu.innerHTML = `
-            <div style="padding:12px; border-bottom:1px solid var(--border)"><strong>${currentUserData.name}</strong></div>
-            <button class="dropdown-item" onclick="openProfileEdit()">⚙️ プロフィール編集</button>
-            <button class="dropdown-item" id="logoutBtn" style="color:var(--danger)">🚪 ログアウト</button>
-          `;
-          document.getElementById('logoutBtn').onclick = () => signOut(auth);
-        } catch (e) {
-          console.error("DBアクセスエラー:", e);
+        const uDoc = await getDoc(doc(db, "users", user.uid));
+        if (uDoc.exists()) { currentUserData = uDoc.data(); } 
+        else {
+          currentUserData = { uid: user.uid, name: user.displayName || "ユーザー", bio: "", avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` };
+          await setDoc(doc(db, "users", user.uid), currentUserData);
         }
+        userCache[user.uid] = currentUserData;
+        avatarImg.src = currentUserData.avatar;
+        menu.innerHTML = `<div style="padding:12px;"><strong>${currentUserData.name}</strong></div><button class="dropdown-item" onclick="openProfileEdit()">⚙️ プロフィール編集</button><button class="dropdown-item" id="logoutBtn" style="color:var(--danger)">🚪 ログアウト</button>`;
+        document.getElementById('logoutBtn').onclick = () => signOut(auth);
       } else {
-        // 未ログイン時の表示
         currentUserData = null;
         avatarImg.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
-        menu.innerHTML = `<button class="dropdown-item" onclick="window.location.href='${LOGIN_PAGE}'">🔑 ログイン / 新規登録</button>`;
+        menu.innerHTML = `<button class="dropdown-item" onclick="window.location.href='${LOGIN_PAGE}'">🔑 ログイン</button>`;
       }
       render();
     });
 
-    // リアルタイム表示（これは誰でも見れる）
     onSnapshot(query(collection(db, "scripts"), orderBy("createdAt", "desc")), (snapshot) => {
       scripts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       render();
     });
 
-    window.render = () => {
+    // メインの描画関数
+    window.render = async () => {
       const grid = document.getElementById('scriptGrid');
       const term = document.getElementById('searchInput').value.toLowerCase();
       grid.innerHTML = '';
 
-      scripts.filter(s => s.title.toLowerCase().includes(term) || s.game.toLowerCase().includes(term)).forEach(s => {
+      // 順序を守るために for...of で回す
+      for (const s of scripts) {
+        if (!s.title.toLowerCase().includes(term) && !s.game.toLowerCase().includes(term)) continue;
+
+        const author = await getUserInfo(s.authorUid);
         const isMine = auth.currentUser && s.authorUid === auth.currentUser.uid;
         const isLiked = auth.currentUser && s.likedBy?.includes(auth.currentUser.uid);
+        
         const card = document.createElement('div');
         card.className = 'script-card';
         card.innerHTML = `
-          ${isMine ? `<button class="card-menu-btn" onclick="toggleCardMenu('${s.id}')">⋮</button><div class="card-menu" id="menu-${s.id}"><button class="dropdown-item" onclick="openEditModal('${s.id}')">✏️ 編集</button><button class="dropdown-item" style="color:var(--danger)" onclick="handleDelete('${s.id}')">🗑️ 削除</button></div>` : ''}
-          <div class="card-header"><h3>${s.title}</h3><span class="game-tag">${s.game}</span></div>
+          ${isMine ? `<button class="card-menu-btn" onclick="toggleCardMenu(event, '${s.id}')">⋮</button><div class="card-menu" id="menu-${s.id}"><button class="dropdown-item" onclick="openEditModal('${s.id}')">✏️ 編集</button><button class="dropdown-item" style="color:var(--danger)" onclick="handleDelete('${s.id}')">🗑️ 削除</button></div>` : ''}
+          <h3>${s.title}</h3><span class="game-tag">${s.game}</span>
           <p class="script-desc">${s.desc}</p>
           <div style="display:flex; gap:15px; margin-bottom:10px;">
             <button class="btn" style="background:none; color:${isLiked ? '#f43f5e' : '#94a3b8'}" onclick="handleLike('${s.id}', ${isLiked})">${isLiked ? '❤️' : '🤍'} ${s.likes || 0}</button>
-            <button class="btn" style="background:none; color:var(--primary); font-size:0.8rem;" onclick="toggleComments('${s.id}')">💬 ${s.comments?.length || 0} コメント</button>
+            <button class="btn" style="background:none; color:var(--primary); font-size:0.8rem;" onclick="toggleComments('${s.id}')">💬 ${s.comments?.length || 0}</button>
           </div>
           <div id="comments-${s.id}" class="comment-section">
-            <div class="comment-list">${(s.comments || []).map(c => `
-              <div class="comment-item">
-                <img src="${c.a || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'}" class="comment-avatar" onclick="showUser('${c.uid}')">
-                <div class="comment-content"><strong>${c.u}:</strong> ${c.t}</div>
-              </div>`).join('')}</div>
-            <div style="display:flex; gap:5px;"><input type="text" id="input-${s.id}" class="form-control" style="margin:0; padding:5px; font-size:0.8rem;" placeholder="コメントを追加..." maxlength="100"><button class="btn btn-primary" style="padding:4px 8px;" onclick="handleAddComment('${s.id}')">投稿</button></div>
+            <div class="comment-list" id="list-${s.id}"></div>
+            <div style="display:flex; gap:5px;"><input type="text" id="input-${s.id}" class="form-control" style="margin:0; padding:5px; font-size:0.8rem;" placeholder="コメント..."><button class="btn btn-primary" style="padding:4px 8px;" onclick="handleAddComment('${s.id}')">投稿</button></div>
           </div>
           <div class="card-footer">
-            <div class="author-info" onclick="showUser('${s.authorUid}')"><img src="${s.authorAvatar}" class="author-avatar"><span>${s.authorName}</span></div>
-            <button class="btn btn-primary btn-copy" style="font-size:0.7rem; padding:5px 10px;" data-id="${s.id}">コードをコピー</button>
+            <div class="author-info" onclick="showUser('${s.authorUid}')"><img src="${author.avatar}" class="author-avatar"><span>${author.name}</span></div>
+            <button class="btn btn-primary" onclick="copyCode('${s.id}', this)">コピー</button>
           </div>
         `;
         grid.appendChild(card);
-      });
-      
-      document.querySelectorAll('.btn-copy').forEach(btn => {
-        btn.onclick = () => {
-          const scriptId = btn.getAttribute('data-id');
-          const script = scripts.find(x => x.id === scriptId);
-          if (script) copyCode(script.content, btn);
-        };
-      });
+        
+        // コメント描画
+        const cList = document.getElementById(`list-${s.id}`);
+        if (s.comments) {
+          for (const c of s.comments) {
+            const cAuthor = await getUserInfo(c.uid);
+            const div = document.createElement('div');
+            div.className = 'comment-item';
+            div.innerHTML = `<img src="${cAuthor.avatar}" class="comment-avatar" onclick="showUser('${c.uid}')"><div class="comment-content"><strong>${cAuthor.name}:</strong> ${c.t}</div>`;
+            cList.appendChild(div);
+          }
+        }
+      }
     };
 
-    // --- 各種アクション (未ログインなら弾く) ---
     window.handleLike = async (id, isLiked) => { 
-      if(!requireAuth()) return; 
-      try {
-        await updateDoc(doc(db, "scripts", id), { 
-          likes: increment(isLiked ? -1 : 1), 
-          likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) 
-        }); 
-      } catch(e) { console.error(e); }
+      if(!auth.currentUser) return window.location.href=LOGIN_PAGE; 
+      await updateDoc(doc(db, "scripts", id), { 
+        likes: increment(isLiked ? -1 : 1), 
+        likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) 
+      }); 
+    };
+    
+    window.handleAddComment = async (id) => {
+      if(!auth.currentUser) return window.location.href=LOGIN_PAGE;
+      const input = document.getElementById(`input-${id}`);
+      const t = filterText(input.value.trim());
+      if(t.length < 2) return;
+      await updateDoc(doc(db, "scripts", id), { comments: arrayUnion({ uid: auth.currentUser.uid, t, createdAt: Date.now() }) });
+      input.value = '';
     };
 
-    window.handleAddComment = async (id) => {
-      if (!requireAuth()) return;
-      const input = document.getElementById(`input-${id}`);
-      let commentText = input.value.trim();
-      if (commentText.length < 2) return alert("コメントが短すぎます");
-      commentText = filterText(commentText);
-      try {
-        await updateDoc(doc(db, "scripts", id), { 
-          comments: arrayUnion({ u: currentUserData.name, a: currentUserData.avatar, t: commentText, uid: auth.currentUser.uid, createdAt: Date.now() }) 
+    window.copyCode = (id, btn) => {
+      const s = scripts.find(x => x.id === id);
+      if (s) {
+        navigator.clipboard.writeText(s.content).then(() => {
+          const old = btn.textContent; btn.textContent = 'OK!'; setTimeout(() => btn.textContent = old, 1500);
         });
-        input.value = '';
-      } catch (e) { alert("送信失敗"); }
+      }
     };
 
     document.getElementById('profileEditForm').onsubmit = async (e) => {
       e.preventDefault();
-      if (!requireAuth()) return;
-      const upd = { 
-        name: filterText(document.getElementById('editName').value), 
-        bio: filterText(document.getElementById('editBio').value), 
-        avatar: document.getElementById('editPreview').src 
-      };
-      try {
-        await updateDoc(doc(db, "users", auth.currentUser.uid), upd);
-        currentUserData = { ...currentUserData, ...upd };
-        document.getElementById('headerAvatar').src = upd.avatar;
-        closeModal('profileEditModal');
-        alert("保存完了");
-        render();
-      } catch (err) { alert("保存失敗"); }
+      const upd = { name: filterText(document.getElementById('editName').value), bio: filterText(document.getElementById('editBio').value), avatar: document.getElementById('editPreview').src };
+      await updateDoc(doc(db, "users", auth.currentUser.uid), upd);
+      currentUserData = { ...currentUserData, ...upd };
+      userCache[auth.currentUser.uid] = currentUserData;
+      closeModal('profileEditModal');
+      render();
     };
 
     document.getElementById('postForm').onsubmit = async (e) => {
       e.preventDefault();
-      if (!requireAuth()) return;
       const id = document.getElementById('editDocId').value;
-      const data = { 
-        title: filterText(document.getElementById('postTitle').value), 
-        game: filterText(document.getElementById('postGame').value), 
-        desc: filterText(document.getElementById('postDesc').value), 
-        content: document.getElementById('postContent').value, 
-        updatedAt: Date.now() 
-      };
-      try {
-        if (id) {
-          await updateDoc(doc(db, "scripts", id), data);
-        } else {
-          await addDoc(collection(db, "scripts"), { ...data, authorName: currentUserData.name, authorAvatar: currentUserData.avatar, authorUid: auth.currentUser.uid, likes: 0, likedBy: [], comments: [], createdAt: Date.now() });
-        }
-        closeModal('postModal');
-        e.target.reset();
-      } catch (err) { alert("投稿失敗"); }
+      const data = { title: filterText(document.getElementById('postTitle').value), game: filterText(document.getElementById('postGame').value), desc: filterText(document.getElementById('postDesc').value), content: document.getElementById('postContent').value, updatedAt: Date.now() };
+      if (id) { await updateDoc(doc(db, "scripts", id), data); } 
+      else { await addDoc(collection(db, "scripts"), { ...data, authorUid: auth.currentUser.uid, likes: 0, likedBy: [], comments: [], createdAt: Date.now() }); }
+      closeModal('postModal');
+      e.target.reset();
     };
 
-    // --- UI補助 ---
-    window.handleDelete = async (id) => { if(requireAuth() && confirm("削除しますか？")) await deleteDoc(doc(db, "scripts", id)); };
-    window.openProfileEdit = () => { if(!requireAuth()) return; document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; document.getElementById('editPreview').style.display = 'block'; openModal('profileEditModal'); };
+    window.handleDelete = async (id) => { if(confirm("削除しますか？")) await deleteDoc(doc(db, "scripts", id)); };
+    window.openProfileEdit = () => { document.getElementById('editName').value = currentUserData.name; document.getElementById('editBio').value = currentUserData.bio; document.getElementById('editPreview').src = currentUserData.avatar; document.getElementById('editPreview').style.display='block'; openModal('profileEditModal'); };
     document.getElementById('editFile').onchange = (e) => { const r = new FileReader(); r.onload = (ev) => { document.getElementById('editPreview').src = ev.target.result; document.getElementById('editPreview').style.display = 'block'; }; r.readAsDataURL(e.target.files[0]); };
-    window.copyCode = (txt, btn) => { navigator.clipboard.writeText(txt).then(() => { const old = btn.textContent; btn.textContent = 'コピー完了！'; setTimeout(() => btn.textContent = old, 1500); }); };
     window.toggleComments = (id) => { const el = document.getElementById(`comments-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; };
     window.openModal = (id) => { document.getElementById(id).style.display = 'flex'; };
     window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
     window.toggleDropdown = () => { const d = document.getElementById('userDropdown'); d.style.display = d.style.display === 'flex' ? 'none' : 'flex'; };
-    window.toggleCardMenu = (id) => { const m = document.getElementById(`menu-${id}`); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
+    window.toggleCardMenu = (e, id) => { e.stopPropagation(); const m = document.getElementById(`menu-${id}`); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
     window.openEditModal = (id) => { const s = scripts.find(x => x.id === id); document.getElementById('editDocId').value = id; document.getElementById('postTitle').value = s.title; document.getElementById('postGame').value = s.game; document.getElementById('postDesc').value = s.desc; document.getElementById('postContent').value = s.content; openModal('postModal'); };
-    window.showUser = async (uid) => { const u = await getDoc(doc(db, "users", uid)); if(u.exists()){ const d = u.data(); document.getElementById('viewName').innerText = d.name; document.getElementById('viewAvatar').src = d.avatar; document.getElementById('viewBio').innerText = d.bio || "自己紹介なし"; openModal('userProfileModal'); } };
-    document.getElementById('postBtnMain').onclick = () => { if(requireAuth()){ document.getElementById('editDocId').value = ""; document.getElementById('postForm').reset(); openModal('postModal'); } };
+    window.showUser = async (uid) => { const u = await getUserInfo(uid); document.getElementById('viewName').innerText = u.name; document.getElementById('viewAvatar').src = u.avatar; document.getElementById('viewBio').innerText = u.bio || "なし"; openModal('userProfileModal'); };
+    document.getElementById('postBtnMain').onclick = () => { if(!auth.currentUser) return window.location.href=LOGIN_PAGE; document.getElementById('editDocId').value = ""; document.getElementById('postForm').reset(); openModal('postModal'); };
     document.getElementById('searchInput').oninput = render;
-    window.onclick = (e) => { if(e.target.className === 'modal-overlay') e.target.style.display = 'none'; if(!e.target.closest('.card-menu-btn')) document.querySelectorAll('.card-menu').forEach(m => m.style.display='none'); if(!e.target.closest('.user-menu-container')) document.getElementById('userDropdown').style.display = 'none'; };
+    window.onclick = () => { document.getElementById('userDropdown').style.display = 'none'; document.querySelectorAll('.card-menu').forEach(m => m.style.display = 'none'); };
   </script>
 </body>
 </html>
