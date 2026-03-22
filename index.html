@@ -33,12 +33,11 @@
     .search-input { width: 100%; padding: 1.2rem 2.5rem; background: var(--input-bg); border: 1px solid var(--border); border-radius: 100px; color: #fff; font-size: 1rem; margin-bottom: 2.5rem; transition: 0.3s; }
     .search-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2); }
 
-    /* グリッドレイアウト（サイズ連動防止） */
     .script-grid { 
       display: grid; 
       grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); 
       gap: 24px; 
-      align-items: start; /* ここが重要 */
+      align-items: start;
     }
 
     .script-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 24px; position: relative; display: flex; flex-direction: column; backdrop-filter: blur(8px); transition: 0.3s; }
@@ -156,10 +155,8 @@
     const db = getFirestore(app);
     const LOGIN_PAGE = "https://shirumaka.github.io/ShirumaScriptLogin/";
 
-    // 【管理者UIDの設定】ここに自分のUIDを入れる
     const ADMIN_UIDS = ["X66Wp63YpQfQyZInUu9k9k8fO432"]; 
     
-    // 【規制ワードの設定】
     const BANNED_WORDS = ["死ね", "殺す", "殺意", "キチガイ", "ゴミ", "カス", "性欲", "SEX", "FUCK", "SHIT"];
 
     let currentUserData = null;
@@ -167,14 +164,12 @@
     let userCache = {};
     let isRendering = false;
 
-    // 規制チェック
     const checkBanned = (text) => {
       const found = BANNED_WORDS.find(word => text.toLowerCase().includes(word.toLowerCase()));
       if (found) { alert(`不適切な表現（${found}）が含まれているため、操作を中断しました。`); return true; }
       return false;
     };
 
-    // 画像圧縮
     const resizeImage = (file) => new Promise(resolve => {
       const reader = new FileReader();
       reader.onload = e => {
@@ -275,7 +270,6 @@
       isRendering = false;
     };
 
-    // コメント投稿
     window.handleAddComment = async (e, id) => {
       e.stopPropagation();
       if(!auth.currentUser) return window.location.href=LOGIN_PAGE;
@@ -287,7 +281,6 @@
       i.value = '';
     };
 
-    // いいね機能
     window.handleLike = async (e, id, isLiked) => {
       e.stopPropagation();
       if(!auth.currentUser) return window.location.href=LOGIN_PAGE;
@@ -297,7 +290,6 @@
       });
     };
 
-    // プロフィール保存
     document.getElementById('profileEditForm').onsubmit = async (e) => {
       e.preventDefault();
       const n = document.getElementById('editName').value;
@@ -313,7 +305,6 @@
       btn.disabled = false; btn.textContent = "保存する";
     };
 
-    // スクリプト投稿/編集
     document.getElementById('postForm').onsubmit = async (e) => {
       e.preventDefault();
       const t = document.getElementById('postTitle').value, d = document.getElementById('postDesc').value, c = document.getElementById('postContent').value, g = document.getElementById('postGame').value;
@@ -329,7 +320,6 @@
       closeModal('postModal');
     };
 
-    // 各種ウィンドウ・UI制御
     window.copyCode = (e, id, btn) => {
       e.stopPropagation();
       const s = scripts.find(x => x.id === id);
